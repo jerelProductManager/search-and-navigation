@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Management — B&H Admin</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --green:   #3a5533;
+  --green2:  #4a6a42;
+  --cream:   #f0e8c8;
+  --cream2:  #e6dba8;
+  --red:     #cc3300;
+  --gold:    #b8860b;
+  --blue:    #1155cc;
+  --orange:  #cc6600;
+  --white:   #ffffff;
+  --bg:      #e4e4e4;
+  --border:  #aaaaaa;
+  --border2: #cccccc;
+  --text:    #222222;
+  --muted:   #666666;
+  --row-alt: #f0ebe0;
+  --active:  #dff0d8;
+  --tbl-hdr: #ddd8c8;
+}
+body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: var(--text); background: var(--bg); min-height: 100vh; }
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── HEADER ── */
+.cms-header { background: var(--green); }
+.cms-header-top { display: flex; align-items: center; padding: 6px 14px; gap: 20px; min-height: 52px; }
+.cms-logo { display: flex; align-items: center; text-decoration: none; }
+.cms-logo-box { background: #cc0000; color: #fff; font-size: 18px; font-weight: 900; padding: 4px 8px; letter-spacing: -1px; line-height: 1; border-radius: 2px; }
+.cms-logo-sub { font-size: 8px; color: #c8d8c0; margin-left: 5px; line-height: 1.4; text-transform: uppercase; letter-spacing: 0.4px; }
+.cms-top-links { display: flex; align-items: center; flex: 1; }
+.cms-top-links a { color: #d0d8c8; font-size: 12px; text-decoration: underline; margin-right: 16px; }
+.cms-top-links a:hover { color: #fff; }
+.cms-header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.cms-tools-btn { background: #f0f0f0; border: 1px solid #888; padding: 3px 8px; font-size: 11px; cursor: pointer; border-radius: 2px; }
+.cms-logout-btn { background: var(--white); border: 1px solid var(--border); padding: 4px 12px; font-size: 12px; cursor: pointer; }
+.cms-feedback { color: var(--cream); font-size: 11px; text-decoration: underline; cursor: pointer; }
+
+/* ── SUB-NAV ── */
+.cms-subnav { background: #c8bc98; border-top: 1px solid #9a9060; border-bottom: 2px solid #9a9060; display: flex; align-items: center; }
+.cms-subnav-item { padding: 8px 24px; font-size: 13px; font-weight: bold; color: var(--text); cursor: pointer; border-right: 1px solid #9a9060; white-space: nowrap; }
+.cms-subnav-item:hover { background: #b8ac88; }
+.cms-subnav-item.active { background: #a89c78; border-bottom: 2px solid var(--green); }
+.cms-subnav-item .arrow { font-size: 10px; margin-left: 4px; }
+
+/* ── PAGE ── */
+.cms-page { max-width: 1100px; margin: 0 auto; padding: 16px 16px 60px; }
+.page-title-bar {
+  background: var(--white); border: 1px solid var(--border);
+  padding: 10px 16px; margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.page-title { font-size: 18px; font-weight: bold; color: var(--red); }
+.page-subtitle { font-size: 12px; color: var(--muted); }
+
+/* ── CMS BOX ── */
+.cms-box { background: var(--white); border: 1px solid var(--border); margin-bottom: 16px; }
+.cms-box-header {
+  background: var(--tbl-hdr); border-bottom: 1px solid var(--border);
+  padding: 6px 12px; font-size: 13px; font-weight: bold; color: var(--text);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cms-box-header .header-actions { display: flex; gap: 10px; align-items: center; }
+
+/* ── TWO-COLUMN ── */
+.two-col { display: flex; gap: 16px; align-items: flex-start; }
+.two-col .col-main { flex: 1; min-width: 0; }
+.two-col .col-side { flex: 0 0 340px; }
+
+/* ── EDITABLE TABLES ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead th {
+  background: var(--tbl-hdr); border-bottom: 1px solid var(--border);
+  padding: 5px 10px; font-size: 12px; font-weight: bold; text-align: left;
+}
+.data-table thead th.id-col  { width: 100px; }
+.data-table thead th.act-col { width: 100px; text-align: right; }
+.data-table tbody tr { border-bottom: 1px solid var(--border2); }
+.data-table tbody tr:nth-child(even) td { background: var(--row-alt); }
+.data-table tbody tr:hover td { background: #eaf0e2; }
+.data-table tbody tr.editing td { background: #fffbe8 !important; border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold); }
+.data-table td { padding: 5px 10px; font-size: 12px; vertical-align: middle; }
+.data-table td.id-col  { font-family: 'Courier New', monospace; color: var(--muted); font-size: 11px; }
+.data-table td.act-col { text-align: right; white-space: nowrap; }
+
+/* inline edit inputs */
+.inline-input {
+  border: 1px solid var(--green2); outline: none;
+  padding: 3px 6px; font-size: 12px; font-family: Arial, sans-serif;
+  background: var(--white); width: 100%;
+}
+.inline-input:focus { box-shadow: 0 0 0 2px rgba(74,106,66,0.2); }
+.inline-input.id-input { width: 90px; font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: 0.5px; }
+
+/* action links */
+.act-edit   { color: var(--blue);   font-size: 11px; text-decoration: underline; cursor: pointer; margin-right: 8px; }
+.act-save   { color: var(--green2); font-size: 11px; text-decoration: underline; cursor: pointer; font-weight: bold; margin-right: 8px; }
+.act-cancel { color: var(--muted);  font-size: 11px; text-decoration: underline; cursor: pointer; margin-right: 8px; }
+.act-delete { color: var(--orange); font-size: 11px; text-decoration: underline; cursor: pointer; }
+.act-add    { color: var(--gold);   font-size: 12px; text-decoration: underline; cursor: pointer; font-weight: bold; }
+
+/* add-row form */
+.add-row-form {
+  display: none; padding: 10px 12px; background: #fffbe8;
+  border-top: 2px solid var(--green2);
+}
+.add-row-form.open { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.add-row-form .form-field { display: flex; flex-direction: column; gap: 3px; }
+.add-row-form .form-field label { font-size: 11px; font-weight: bold; color: var(--text); }
+.add-row-form .form-field input {
+  border: 1px solid var(--green2); padding: 4px 7px; font-size: 12px;
+  font-family: Arial, sans-serif; background: var(--white); outline: none;
+  width: 220px;
+}
+.add-row-form .form-field input.id-f { width: 110px; font-family: 'Courier New', monospace; font-size: 11px; }
+.add-row-form .form-field input:focus { box-shadow: 0 0 0 2px rgba(74,106,66,0.2); }
+.add-row-btns { display: flex; gap: 8px; align-items: center; padding-bottom: 1px; }
+.btn-add-confirm { background: var(--white); border: 1px solid var(--border); padding: 5px 14px; font-size: 12px; font-weight: bold; cursor: pointer; }
+.btn-add-confirm:hover { background: var(--cream2); }
+.btn-add-cancel  { background: none; border: none; font-size: 12px; color: var(--muted); text-decoration: underline; cursor: pointer; }
+.add-err { font-size: 11px; color: var(--red); margin-top: 4px; }
+
+/* table footer */
+.table-footer { padding: 7px 12px; border-top: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
+.table-footer .count { font-size: 11px; color: var(--muted); }
+
+/* ── LABEL PANEL: category selector ── */
+.cat-selector-bar {
+  padding: 8px 12px; background: var(--cream); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.cat-selector-bar label { font-size: 12px; font-weight: bold; color: var(--text); white-space: nowrap; }
+.cat-selector-bar select { font-size: 12px; padding: 3px 6px; border: 1px solid var(--border2); min-width: 220px; }
+
+/* label group header rows */
+.data-table tbody tr.group-row td { background: #eef4ee !important; color: var(--blue); font-weight: bold; font-style: italic; font-size: 11px; padding: 3px 10px; }
+.data-table tbody tr.group-row:hover td { background: #dff0d8 !important; }
+
+/* save-all bar */
+.save-all-bar {
+  position: sticky; bottom: 0; background: var(--cream2);
+  border-top: 2px solid var(--green2); padding: 8px 16px;
+  display: flex; align-items: center; gap: 12px; z-index: 100;
+}
+.save-all-btn { background: var(--white); border: 1px solid var(--border); padding: 5px 20px; font-size: 12px; font-weight: bold; cursor: pointer; }
+.save-all-btn:hover { background: var(--white); border-color: var(--green2); }
+.save-status { font-size: 12px; color: #2a6a2a; font-weight: bold; }
+.unsaved-badge { background: #cc6600; color: #fff; font-size: 10px; border-radius: 2px; padding: 1px 6px; font-weight: bold; display: none; }
+.unsaved-badge.show { display: inline-block; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="cms-header">
+  <div class="cms-header-top">
+    <a class="cms-logo" href="bh-mega-menu.html">
+      <div class="cms-logo-box">B&H</div>
+      <div class="cms-logo-sub">Photo<br>Video · Audio</div>
+    </a>
+    <div class="cms-top-links">
+      <a href="#">Advanced Search</a>
+      <a href="#">Multi-Item Search</a>
+      <a href="#">Multi-Category Id Search</a>
+      <a href="#">Browse</a>
+    </div>
+    <div class="cms-header-right">
+      <span class="cms-feedback">To Submit a Bug or Feedback Click Here</span>
+      <button class="cms-tools-btn">🔧</button>
+      <button class="cms-logout-btn">Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SUB-NAV ── -->
+<div class="cms-subnav">
+  <div class="cms-subnav-item" onclick="location.href='bh-mega-menu.html'">Item Navigation <span class="arrow">▼</span></div>
+  <div class="cms-subnav-item">jerelscs's Saved Reports <span class="arrow">▼</span></div>
+  <div class="cms-subnav-item active">Data Management <span class="arrow">▼</span></div>
+  <div class="cms-subnav-item">Admin <span class="arrow">▼</span></div>
+</div>
+
+<!-- ── PAGE ── -->
+<div class="cms-page">
+
+  <div class="page-title-bar">
+    <div>
+      <div class="page-title">Data Management</div>
+      <div class="page-subtitle">Manage navigation categories and child category label IDs</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="bh-mega-menu.html" style="font-size:12px;">← Nav Preview</a>
+      <span style="color:#bbb;">|</span>
+      <a href="category-detail.html" style="font-size:12px;" id="detailLink">Category Detail</a>
+    </div>
+  </div>
+
+  <div class="two-col">
+
+    <!-- LEFT: Nav Categories -->
+    <div class="col-main">
+      <div class="cms-box">
+        <div class="cms-box-header">
+          Navigation Categories
+          <div class="header-actions">
+            <span class="unsaved-badge" id="catUnsavedBadge">Unsaved changes</span>
+          </div>
+        </div>
+
+        <table class="data-table" id="catTable">
+          <thead>
+            <tr>
+              <th>Category Name</th>
+              <th class="id-col">CatID</th>
+              <th class="act-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="catTbody"></tbody>
+        </table>
+
+        <!-- Add Category form -->
+        <div class="add-row-form" id="catAddForm">
+          <div class="form-field">
+            <label>Category Name</label>
+            <input type="text" id="catAddName" placeholder="e.g. Photography" />
+          </div>
+          <div class="form-field">
+            <label>CatID</label>
+            <input type="text" id="catAddId" class="id-f" placeholder="e.g. 989" />
+          </div>
+          <div class="add-row-btns">
+            <button class="btn-add-confirm" onclick="confirmAddCat()">Add</button>
+            <button class="btn-add-cancel"  onclick="closeAddCat()">Cancel</button>
+          </div>
+          <div class="add-err" id="catAddErr"></div>
+        </div>
+
+        <div class="table-footer">
+          <span class="count" id="catCount"></span>
+          <span class="act-add" onclick="openAddCat()">+ Add Category</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: quick legend -->
+    <div class="col-side">
+      <div class="cms-box">
+        <div class="cms-box-header">About This Page</div>
+        <div style="padding:12px 14px;font-size:12px;line-height:1.7;color:#444;">
+          <p><strong>Navigation Categories</strong> are the top-level items in the green nav bar (e.g. Photography, Computers). Each has a unique CatID.</p>
+          <br>
+          <p><strong>Child Category Labels</strong> are the items available when adding a <em>Label</em>-type featured slot. Each label can have an ID# assigned for system reference.</p>
+          <br>
+          <p>All changes are saved to browser storage and reflected immediately across the Nav Preview and Category Detail pages.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Child Category Labels -->
+  <div class="cms-box">
+    <div class="cms-box-header">
+      Child Category Labels
+      <div class="header-actions">
+        <span class="unsaved-badge" id="lblUnsavedBadge">Unsaved changes</span>
+      </div>
+    </div>
+
+    <div class="cat-selector-bar">
+      <label>Category:</label>
+      <select id="lblCatSelect" onchange="renderLabelTable()"></select>
+    </div>
+
+    <table class="data-table" id="lblTable">
+      <thead>
+        <tr>
+          <th>Label Name</th>
+          <th class="id-col">ID#</th>
+          <th class="act-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="lblTbody"></tbody>
+    </table>
+
+    <!-- Add Label form -->
+    <div class="add-row-form" id="lblAddForm">
+      <div class="form-field">
+        <label>Label Name</label>
+        <input type="text" id="lblAddName" placeholder="e.g. Cameras & Lenses" />
+      </div>
+      <div class="form-field">
+        <label>ID# <span style="font-weight:normal;color:#888;">(optional)</span></label>
+        <input type="text" id="lblAddId" class="id-f" placeholder="e.g. 9800" />
+      </div>
+      <div class="add-row-btns">
+        <button class="btn-add-confirm" onclick="confirmAddLabel()">Add</button>
+        <button class="btn-add-cancel"  onclick="closeAddLabel()">Cancel</button>
+      </div>
+      <div class="add-err" id="lblAddErr"></div>
+    </div>
+
+    <div class="table-footer">
+      <span class="count" id="lblCount"></span>
+      <span class="act-add" onclick="openAddLabel()">+ Add Label</span>
+    </div>
+  </div>
+
+</div><!-- /cms-page -->
+
+<!-- ── SAVE-ALL BAR ── -->
+<div class="save-all-bar">
+  <button class="save-all-btn" onclick="saveAll()">Save All Changes</button>
+  <span class="save-status" id="saveStatus"></span>
+  <span style="font-size:11px;color:#666;margin-left:auto;">Changes are auto-synced to Nav Preview and Category Detail pages.</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// SEED DATA
+// ═══════════════════════════════════════════════════════════
+
+const SEED_CATS = [
+  { name:'Photography',        catId:'989'   },
+  { name:'Computers',          catId:'9581'  },
+  { name:'Pro Video',          catId:'3755'  },
+  { name:'Lighting',           catId:'1161'  },
+  { name:'Pro Audio',          catId:'12154' },
+  { name:'Drones',             catId:'27989' },
+  { name:'Camcorders',         catId:'1820'  },
+  { name:'TVs & Entertainment',catId:'4600'  },
+  { name:'Audio-Visual',       catId:'3644'  },
+  { name:'Optics',             catId:'978'   },
+  { name:'Mobile',             catId:'8565'  },
+  { name:'Surveillance',       catId:'3496'  },
+  { name:'More',               catId:'47088' },
+  { name:'Used',               catId:'2870'  },
+  { name:'Specials',           catId:''      },
+];
+
+// Child labels per catId — seeded from MENUS categories
+const SEED_LABELS = {
+  '989':  [{name:'Cameras & Lenses',id:''},{name:'Accessories',id:''},{name:'More in Photography',id:''},{name:'Scan, Print & Present',id:''}],
+  '9581': [{name:'Computers & Tablets',id:''},{name:'Hardware & Software',id:''},{name:'Accessories',id:''}],
+  '3755': [{name:'Pro Camcorders & Cameras',id:''},{name:'Camcorder & Camera Accessories',id:''},{name:'Production Equipment',id:''},{name:'Accessories',id:''}],
+  '1161': [{name:'Photo & Video Lights',id:''},{name:'Strobe Lighting',id:''},{name:'Specialty Lighting',id:''},{name:'Light Modifiers',id:''},{name:'Light Stands & Mounting',id:''},{name:'Accessories',id:''},{name:'Studio Equipment',id:''}],
+  '12154': [{name:'Accessories',id:''}],
+  '27989': [{name:'Prosumer & FPV Drones',id:''},{name:'Professional & Underwater Drones',id:''},{name:'Drone Parts & Accessories',id:''}],
+  '1820': [{name:'Applications',id:''},{name:'Accessories',id:''}],
+  '4600': [{name:'TV & Video',id:''},{name:'Home Audio',id:''},{name:'Home Theater Projection',id:''},{name:'Portable Audio',id:''},{name:'Gaming',id:''},{name:'Accessories',id:''}],
+  '3644': [{name:'Projection & Display',id:''},{name:'Complete Solutions',id:''},{name:'Audio Presentation',id:''},{name:'Audio Conferencing',id:''},{name:'Pro Audio Solutions',id:''},{name:'Accessories',id:''}],
+  '978':  [{name:'Optics',id:''}],
+  '8565': [{name:'Mobile Devices',id:''},{name:'Mobile Content Creator',id:''},{name:'Mobile Audio Solutions',id:''},{name:'General Accessories',id:''}],
+  '3496': [{name:'Surveillance',id:''},{name:'Security',id:''},{name:'ID Card Issuance',id:''}],
+  '47088':[{name:'Musical Instruments',id:''},{name:'Home & Garden',id:''},{name:'Sports & Outdoors',id:''},{name:'Automotive',id:''}],
+  '2870': [{name:'Used Photography',id:''},{name:'Used Pro Video',id:''},{name:'Used Computers',id:''},{name:'Used Audio',id:''},{name:'Used TVs',id:''},{name:'Used Optics',id:''}],
+  '':     []
+};
+
+// ═══════════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════════
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('bh_dm_state');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
+function saveState(state) {
+  try { localStorage.setItem('bh_dm_state', JSON.stringify(state)); } catch {}
+}
+
+// Working copies (mutated in place, saved on Save All)
+let cats   = [];   // [{name, catId}]
+let labels = {};   // {catId: [{name, id}]}
+let catsDirty   = false;
+let labelsDirty = false;
+
+function initState() {
+  const saved = loadState();
+  if (saved) {
+    cats   = saved.cats   || JSON.parse(JSON.stringify(SEED_CATS));
+    labels = saved.labels || JSON.parse(JSON.stringify(SEED_LABELS));
+  } else {
+    cats   = JSON.parse(JSON.stringify(SEED_CATS));
+    labels = JSON.parse(JSON.stringify(SEED_LABELS));
+  }
+}
+
+function markDirty(which) {
+  if (which === 'cats')   { catsDirty = true;   document.getElementById('catUnsavedBadge').classList.add('show'); }
+  if (which === 'labels') { labelsDirty = true; document.getElementById('lblUnsavedBadge').classList.add('show'); }
+}
+function clearDirty(which) {
+  if (which === 'cats')   { catsDirty = false;   document.getElementById('catUnsavedBadge').classList.remove('show'); }
+  if (which === 'labels') { labelsDirty = false; document.getElementById('lblUnsavedBadge').classList.remove('show'); }
+}
+
+function saveAll() {
+  saveState({ cats, labels });
+  clearDirty('cats'); clearDirty('labels');
+  const s = document.getElementById('saveStatus');
+  s.textContent = '✓ All changes saved';
+  setTimeout(() => { s.textContent = ''; }, 2500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION CATEGORIES TABLE
+// ═══════════════════════════════════════════════════════════
+
+let catEditIdx = null;
+
+function renderCatTable() {
+  const tbody = document.getElementById('catTbody');
+  tbody.innerHTML = '';
+
+  cats.forEach((cat, i) => {
+    const tr = document.createElement('tr');
+    tr.dataset.i = i;
+
+    if (catEditIdx === i) {
+      tr.classList.add('editing');
+      tr.innerHTML = `
+        <td><input class="inline-input" id="catEditName_${i}" value="${esc(cat.name)}" /></td>
+        <td class="id-col"><input class="inline-input id-input" id="catEditId_${i}" value="${esc(cat.catId)}" placeholder="—" /></td>
+        <td class="act-col">
+          <span class="act-save"   onclick="saveCatEdit(${i})">Save</span>
+          <span class="act-cancel" onclick="cancelCatEdit()">Cancel</span>
+        </td>`;
+    } else {
+      tr.innerHTML = `
+        <td>${esc(cat.name)}</td>
+        <td class="id-col">${cat.catId || '<span style="color:#bbb;">—</span>'}</td>
+        <td class="act-col">
+          <span class="act-edit"   onclick="startCatEdit(${i})">Edit</span>
+          <span class="act-delete" onclick="deleteCat(${i})">Remove</span>
+        </td>`;
+    }
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('catCount').textContent = `${cats.length} categories`;
+
+  // focus edit input
+  if (catEditIdx !== null) {
+    const el = document.getElementById(`catEditName_${catEditIdx}`);
+    if (el) el.focus();
+  }
+
+  // keep "Add" form state
+  populateLabelSelect();
+}
+
+function startCatEdit(i)  { catEditIdx = i; renderCatTable(); }
+function cancelCatEdit()  { catEditIdx = null; renderCatTable(); }
+
+function saveCatEdit(i) {
+  const name  = document.getElementById(`catEditName_${i}`).value.trim();
+  const catId = document.getElementById(`catEditId_${i}`).value.trim();
+  if (!name) return;
+  cats[i] = { name, catId };
+  catEditIdx = null;
+  markDirty('cats');
+  renderCatTable();
+}
+
+function deleteCat(i) {
+  if (!confirm(`Remove "${cats[i].name}"?`)) return;
+  cats.splice(i, 1);
+  markDirty('cats');
+  renderCatTable();
+}
+
+// Add form
+function openAddCat()  { document.getElementById('catAddForm').classList.add('open'); document.getElementById('catAddName').focus(); }
+function closeAddCat() { document.getElementById('catAddForm').classList.remove('open'); document.getElementById('catAddName').value = ''; document.getElementById('catAddId').value = ''; document.getElementById('catAddErr').textContent = ''; }
+
+function confirmAddCat() {
+  const name  = document.getElementById('catAddName').value.trim();
+  const catId = document.getElementById('catAddId').value.trim();
+  const err   = document.getElementById('catAddErr');
+  if (!name) { err.textContent = 'Category name is required.'; return; }
+  if (catId && cats.some(c => c.catId === catId)) { err.textContent = `CatID ${catId} already exists.`; return; }
+  cats.push({ name, catId });
+  if (catId && !labels[catId]) labels[catId] = [];
+  markDirty('cats');
+  closeAddCat();
+  renderCatTable();
+}
+
+document.getElementById('catAddId').addEventListener('keydown', e => { if (e.key === 'Enter') confirmAddCat(); });
+
+// ═══════════════════════════════════════════════════════════
+// CHILD LABELS TABLE
+// ═══════════════════════════════════════════════════════════
+
+let lblEditIdx = null;
+
+function populateLabelSelect() {
+  const sel = document.getElementById('lblCatSelect');
+  const current = sel.value;
+  sel.innerHTML = '';
+  cats.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat.catId;
+    opt.textContent = cat.name + (cat.catId ? ` (${cat.catId})` : '');
+    sel.appendChild(opt);
+  });
+  // restore selection if still valid
+  if (current && cats.some(c => c.catId === current)) sel.value = current;
+  renderLabelTable();
+}
+
+function renderLabelTable() {
+  lblEditIdx = null;
+  const catId = document.getElementById('lblCatSelect').value;
+  const rows  = labels[catId] || [];
+  const tbody = document.getElementById('lblTbody');
+  tbody.innerHTML = '';
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="3" style="padding:10px;text-align:center;color:#888;font-style:italic;">No labels yet — click + Add Label below</td></tr>`;
+    document.getElementById('lblCount').textContent = '0 labels';
+    return;
+  }
+
+  rows.forEach((lbl, i) => {
+    const tr = document.createElement('tr');
+    tr.dataset.i = i;
+
+    if (lblEditIdx === i) {
+      tr.classList.add('editing');
+      tr.innerHTML = `
+        <td><input class="inline-input" id="lblEditName_${i}" value="${esc(lbl.name)}" /></td>
+        <td class="id-col"><input class="inline-input id-input" id="lblEditId_${i}" value="${esc(lbl.id)}" placeholder="—" /></td>
+        <td class="act-col">
+          <span class="act-save"   onclick="saveLblEdit(${i})">Save</span>
+          <span class="act-cancel" onclick="cancelLblEdit()">Cancel</span>
+        </td>`;
+    } else {
+      const idDisplay = lbl.id
+        ? `<span style="font-family:monospace;font-size:11px;">${esc(lbl.id)}</span>`
+        : `<span style="color:#bbb;">—</span>`;
+      tr.innerHTML = `
+        <td>${esc(lbl.name)}</td>
+        <td class="id-col">${idDisplay}</td>
+        <td class="act-col">
+          <span class="act-edit"   onclick="startLblEdit(${i})">Edit</span>
+          <span class="act-delete" onclick="deleteLbl(${i})">Remove</span>
+        </td>`;
+    }
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('lblCount').textContent = `${rows.length} labels`;
+
+  if (lblEditIdx !== null) {
+    const el = document.getElementById(`lblEditName_${lblEditIdx}`);
+    if (el) el.focus();
+  }
+}
+
+function startLblEdit(i)  { lblEditIdx = i; renderLabelTable(); }
+function cancelLblEdit()  { lblEditIdx = null; renderLabelTable(); }
+
+function saveLblEdit(i) {
+  const catId = document.getElementById('lblCatSelect').value;
+  const name  = document.getElementById(`lblEditName_${i}`).value.trim();
+  const id    = document.getElementById(`lblEditId_${i}`).value.trim();
+  if (!name) return;
+  labels[catId][i] = { name, id };
+  lblEditIdx = null;
+  markDirty('labels');
+  renderLabelTable();
+}
+
+function deleteLbl(i) {
+  const catId = document.getElementById('lblCatSelect').value;
+  if (!confirm(`Remove "${labels[catId][i].name}"?`)) return;
+  labels[catId].splice(i, 1);
+  markDirty('labels');
+  renderLabelTable();
+}
+
+// Add label form
+function openAddLabel()  { document.getElementById('lblAddForm').classList.add('open'); document.getElementById('lblAddName').focus(); }
+function closeAddLabel() { document.getElementById('lblAddForm').classList.remove('open'); document.getElementById('lblAddName').value = ''; document.getElementById('lblAddId').value = ''; document.getElementById('lblAddErr').textContent = ''; }
+
+function confirmAddLabel() {
+  const catId = document.getElementById('lblCatSelect').value;
+  const name  = document.getElementById('lblAddName').value.trim();
+  const id    = document.getElementById('lblAddId').value.trim();
+  const err   = document.getElementById('lblAddErr');
+  if (!name) { err.textContent = 'Label name is required.'; return; }
+  if (!labels[catId]) labels[catId] = [];
+  labels[catId].push({ name, id });
+  markDirty('labels');
+  closeAddLabel();
+  renderLabelTable();
+}
+
+document.getElementById('lblAddId').addEventListener('keydown', e => { if (e.key === 'Enter') confirmAddLabel(); });
+
+// ═══════════════════════════════════════════════════════════
+// INLINE EDIT — keyboard nav
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    cancelCatEdit();
+    cancelLblEdit();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// UTIL
+// ═══════════════════════════════════════════════════════════
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════
+initState();
+renderCatTable();
+
+// Restore detail link to last-visited catId
+try {
+  const lastId = localStorage.getItem('bh_last_catId');
+  if (lastId) document.getElementById('detailLink').href = `category-detail.html?catId=${lastId}`;
+} catch {}
+</script>
+</body>
+</html>

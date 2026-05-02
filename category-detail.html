@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Category Detail — B&H Admin</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── SHARED DESIGN TOKENS ── */
+:root {
+  --green:    #3a5533;
+  --green2:   #4a6a42;
+  --cream:    #f0e8c8;
+  --cream2:   #e6dba8;
+  --red:      #cc3300;
+  --gold:     #b8860b;
+  --blue:     #1155cc;
+  --orange:   #cc6600;
+  --white:    #ffffff;
+  --bg:       #e4e4e4;
+  --border:   #aaaaaa;
+  --border2:  #cccccc;
+  --text:     #222222;
+  --muted:    #666666;
+  --row-alt:  #f0ebe0;
+  --active:   #dff0d8;
+  --tbl-hdr:  #ddd8c8;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── CMS TOP HEADER ── */
+.cms-header {
+  background: var(--green);
+  padding: 0;
+  position: relative;
+  z-index: 500;
+}
+.cms-header-top {
+  display: flex;
+  align-items: center;
+  padding: 6px 14px;
+  gap: 20px;
+  min-height: 52px;
+  overflow: visible;
+}
+.cms-logo {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.cms-logo-box {
+  background: #cc0000;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  padding: 4px 8px;
+  letter-spacing: -1px;
+  line-height: 1;
+  border-radius: 2px;
+}
+.cms-logo-sub {
+  font-size: 8px;
+  color: #c8d8c0;
+  margin-left: 5px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.cms-top-links {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+}
+.cms-top-links a {
+  color: #d0d8c8;
+  font-size: 12px;
+  text-decoration: underline;
+  margin-right: 16px;
+}
+.cms-top-links a:hover { color: #fff; }
+.cms-quick-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+}
+.cms-quick-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--cream);
+}
+.cms-quick-search select {
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+}
+.cms-quick-search input {
+  width: 160px;
+  font-size: 12px;
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+}
+
+.header-typeahead-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 180px;
+}
+.header-typeahead-wrap input {
+  width: 100%;
+}
+.header-typeahead-dd {
+  display: none;
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  min-width: 300px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--green2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  z-index: 99999;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.header-typeahead-dd.open { display: block; }
+.hta-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border2);
+  transition: background 0.08s;
+}
+.hta-item:last-child { border-bottom: none; }
+.hta-item:hover, .hta-item.focused { background: var(--active); }
+.hta-item-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--text);
+  flex: 1;
+}
+.hta-item-name mark, .hta-item-id mark {
+  background: #fff3a0;
+  font-weight: bold;
+  border-radius: 1px;
+  padding: 0 1px;
+}
+.hta-item-id {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.hta-empty {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+.cms-quick-search button {
+  background: #4a7a3a;
+  border: 1px solid #2a5a1a;
+  color: #aaffaa;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.cms-header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.cms-tools-btn {
+  background: #f0f0f0;
+  border: 1px solid #888;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.cms-logout-btn {
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.cms-feedback {
+  color: var(--cream);
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+/* ── CMS SUB-NAV ── */
+.cms-subnav {
+  background: #c8bc98;
+  border-top: 1px solid #9a9060;
+  border-bottom: 2px solid #9a9060;
+  display: flex;
+  align-items: center;
+  padding: 0 0;
+}
+.cms-subnav-item {
+  padding: 8px 24px;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--text);
+  cursor: pointer;
+  border-right: 1px solid #9a9060;
+  white-space: nowrap;
+}
+.cms-subnav-item:hover { background: #b8ac88; }
+.cms-subnav-item .arrow { font-size: 10px; margin-left: 4px; }
+.cms-back-link {
+  margin-left: auto;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--blue);
+  font-weight: bold;
+  text-decoration: underline;
+  cursor: pointer;
+  border-left: 1px solid #9a9060;
+}
+.cms-back-link:hover { background: #b8ac88; }
+
+/* ── MAIN CONTENT WRAPPER ── */
+.cms-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 16px 40px;
+}
+
+/* ── TOP BLOCK: image + title + buttons ── */
+.page-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+.page-thumb {
+  width: 110px;
+  height: 90px;
+  border: 1px solid var(--border2);
+  background: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.page-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.page-title-area { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 4px; }
+.page-title { font-size: 18px; font-weight: bold; color: var(--red); }
+.page-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.page-btn {
+  background: var(--white); color: var(--text);
+  border: 1px solid var(--border);
+  padding: 5px 16px; font-size: 12px; cursor: pointer;
+  transition: background 0.1s;
+}
+.page-btn:hover { background: var(--cream2); }
+
+/* ── FORM SECTION ── */
+.form-section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.form-field { display: flex; flex-direction: column; gap: 3px; }
+.form-label { font-size: 12px; font-weight: bold; color: var(--text); }
+.form-input {
+  border: 1px solid var(--border2);
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+  color: var(--muted);
+  background: var(--white);
+  width: 100%;
+}
+.form-textarea {
+  border: 1px solid var(--border2);
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+  color: var(--muted);
+  background: var(--white);
+  width: 100%;
+  height: 52px;
+  resize: vertical;
+}
+
+/* ── TWO-COLUMN LOWER SECTION ── */
+.lower-cols {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.col-left  { flex: 0 0 440px; display: flex; flex-direction: column; gap: 10px; }
+.col-right { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+/* ── CMS BOX (shared by all panels) ── */
+.cms-box {
+  background: var(--white);
+  border: 1px solid var(--border);
+}
+.cms-box-header {
+  background: var(--tbl-hdr);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--text);
+}
+
+/* ── METADATA TABLE ── */
+.meta-table { width: 100%; border-collapse: collapse; }
+.meta-table tr { border-bottom: 1px solid var(--border2); }
+.meta-table tr:last-child { border-bottom: none; }
+.meta-table td { padding: 5px 10px; vertical-align: middle; }
+.meta-table .meta-key { font-weight: bold; white-space: nowrap; width: 44%; color: var(--text); }
+.meta-table .meta-val { color: var(--text); }
+.meta-table tr:nth-child(even) td { background: var(--row-alt); }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; }
+.status-dot { width: 12px; height: 12px; border-radius: 50%; }
+.status-dot.active   { background: #44aa44; border: 1px solid #228822; }
+.status-dot.protected { background: #ddaa00; border: 1px solid #aa7700; }
+.meta-link { color: var(--blue); text-decoration: underline; cursor: pointer; font-size: 12px; }
+.meta-select { font-size: 12px; padding: 2px 4px; border: 1px solid var(--border2); max-width: 180px; }
+
+/* ── CATEGORY TABLES (Parent / Child) ── */
+.cat-table { width: 100%; border-collapse: collapse; }
+.cat-table thead tr { border-bottom: 1px solid var(--border); }
+.cat-table th { padding: 4px 10px; font-size: 12px; font-weight: bold; color: var(--text); text-align: left; }
+.cat-table th.id-col { text-align: right; width: 60px; }
+.cat-table td { padding: 4px 10px; font-size: 12px; border-bottom: 1px solid var(--border2); }
+.cat-table td.id-col { text-align: right; color: var(--text); }
+.cat-table .group-header td { color: var(--blue); font-weight: bold; background: var(--white); border-bottom: 1px solid var(--border2); }
+.cat-table .item-row td { font-weight: bold; color: var(--text); }
+.cat-table .item-row:nth-child(even) td { background: var(--row-alt); }
+.cat-table-footer {
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border2);
+  background: var(--white);
+}
+.cat-action-link { color: var(--orange); font-weight: bold; font-size: 12px; text-decoration: underline; cursor: pointer; }
+.cat-action-link:hover { color: var(--red); }
+
+/* ── INFORMATION SOURCE ── */
+.info-source-textarea {
+  width: 100%; height: 160px; border: 1px solid var(--border2);
+  font-size: 12px; font-family: Arial, sans-serif; padding: 5px 8px;
+  resize: vertical; display: block;
+}
+.add-file-row {
+  display: flex; align-items: center; gap: 8px; padding: 5px 10px;
+  border-top: 1px solid var(--border2); background: var(--white);
+}
+.add-file-link { color: var(--blue); font-weight: bold; font-size: 12px; text-decoration: underline; cursor: pointer; }
+.add-file-input { flex: 1; border: 1px solid var(--border2); padding: 3px 5px; font-size: 12px; height: 24px; }
+
+/* ── FLAGS ── */
+.flags-section { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.flags-label { font-size: 12px; font-weight: bold; }
+.flags-select { width: 100%; border: 1px solid var(--border2); padding: 4px 5px; font-size: 12px; }
+.flags-textarea { width: 100%; height: 70px; border: 1px solid var(--border2); padding: 5px; font-size: 12px; font-family: Arial, sans-serif; resize: vertical; }
+.manage-btn-row { padding: 10px 0; text-align: center; }
+.manage-btn {
+  background: var(--white); color: var(--text);
+  border: 1px solid var(--border);
+  padding: 5px 18px; font-size: 12px; cursor: pointer;
+}
+.manage-btn:hover { background: var(--cream2); }
+
+/* ── STATS TABLE ── */
+.stats-table { width: 100%; border-collapse: collapse; }
+.stats-table thead tr { border-bottom: 1px solid var(--border); }
+.stats-table th { padding: 4px 10px; font-size: 12px; font-weight: bold; color: var(--text); text-align: right; }
+.stats-table th:first-child { text-align: left; }
+.stats-table td { padding: 4px 10px; font-size: 12px; border-bottom: 1px solid var(--border2); color: var(--text); }
+.stats-table td:not(:first-child) { text-align: right; color: var(--orange); font-weight: bold; }
+.stats-table tr:nth-child(even) td { background: var(--row-alt); }
+
+/* ═══════════════════════════════════════════════════
+   FEATURED SLOTS PANEL  (styled like Parent/Child box)
+═══════════════════════════════════════════════════ */
+
+.feat-table { width: 100%; border-collapse: collapse; }
+.feat-table thead tr { border-bottom: 1px solid var(--border); }
+.feat-table th { padding: 4px 10px; font-size: 11px; font-weight: bold; color: var(--text); text-align: left; background: var(--tbl-hdr); }
+.feat-table th.type-col { width: 56px; }
+.feat-table th.acts-col { width: 56px; text-align: right; }
+
+.feat-row {
+  border-bottom: 1px solid var(--border2);
+  cursor: pointer;
+  transition: background 0.08s;
+}
+.feat-row:nth-child(even) td { background: var(--row-alt); }
+.feat-row:hover td { background: #e8f0e0; }
+.feat-row.active-row td { background: var(--active) !important; }
+.feat-row.drag-over td { border-top: 2px solid var(--green2) !important; }
+.feat-row.dragging { opacity: 0.35; }
+
+.feat-row td { padding: 4px 6px; vertical-align: middle; font-size: 12px; }
+.feat-drag-handle {
+  color: #bbb; font-size: 13px; cursor: grab; padding: 0 4px 0 2px;
+  line-height: 1; user-select: none; letter-spacing: -1px;
+}
+.feat-drag-handle:active { cursor: grabbing; }
+.feat-slot-num { font-weight: bold; color: var(--muted); width: 46px; font-size: 11px; }
+.feat-item-name { font-weight: bold; }
+.feat-item-name.empty { color: var(--muted); font-weight: normal; font-style: italic; }
+.feat-type-badge {
+  font-size: 9px; background: #e0e0e0; color: var(--muted);
+  border-radius: 2px; padding: 1px 5px; text-transform: uppercase; white-space: nowrap;
+}
+.feat-row-acts { text-align: right; white-space: nowrap; }
+.feat-edit-link { color: var(--blue); font-size: 11px; text-decoration: underline; cursor: pointer; margin-right: 6px; }
+.feat-rm-link   { color: var(--orange); font-size: 11px; text-decoration: underline; cursor: pointer; }
+.feat-add-link  { color: var(--gold); font-size: 11px; text-decoration: underline; cursor: pointer; font-weight: bold; }
+
+/* inline editor that slides in under the table */
+.feat-editor {
+  display: none;
+  border-top: 2px solid var(--green2);
+  padding: 10px 12px;
+  background: #f9f9f4;
+  border-bottom: 1px solid var(--border2);
+  position: relative;
+  overflow: visible;
+}
+.feat-editor.open { display: block; }
+.feat-editor-title { font-size: 12px; font-weight: bold; color: var(--red); margin-bottom: 8px; }
+.feat-editor-fields { display: flex; flex-direction: column; gap: 8px; }
+.feat-field { display: flex; flex-direction: column; gap: 2px; }
+.feat-field label { font-size: 11px; font-weight: bold; color: var(--text); }
+.feat-field select, .feat-field input {
+  font-size: 12px; border: 1px solid var(--border2); padding: 4px 6px;
+  font-family: Arial, sans-serif; background: var(--white); max-width: 340px;
+}
+.feat-field select:focus, .feat-field input:focus { border-color: var(--green2); outline: 1px solid var(--green2); }
+.feat-label-list {
+  border: 1px solid var(--border2); max-height: 130px; overflow-y: auto;
+  background: var(--white); max-width: 340px;
+}
+.feat-label-item {
+  padding: 4px 10px; font-size: 12px; cursor: pointer;
+  border-bottom: 1px solid var(--border2); display: flex; align-items: center;
+  justify-content: space-between; transition: background 0.08s;
+}
+.feat-label-item:nth-child(even) { background: var(--row-alt); }
+.feat-label-item:hover { background: #e8f0e0; }
+.feat-label-item.selected { background: var(--active); font-weight: bold; color: var(--green2); }
+.feat-label-item .check { color: var(--green2); }
+.feat-label-item.used { opacity: 0.4; cursor: not-allowed; }
+.feat-catid-row { display: flex; gap: 6px; max-width: 340px; }
+.feat-catid-row input { flex: 1; }
+.feat-catid-search { background: var(--white); border: 1px solid var(--border); padding: 4px 12px; font-size: 12px; cursor: pointer; }
+.feat-catid-search:hover { background: var(--cream2); }
+
+/* CatID field typeahead */
+.feat-catid-wrap { position: relative; flex: 1; z-index: 50; }
+.feat-catid-wrap input { width: 100%; }
+.feat-catid-ta {
+  display: none;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  min-width: 280px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--green2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+  z-index: 9999;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.feat-catid-ta.open { display: block; }
+.fcta-item {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 5px 10px; cursor: pointer;
+  border-bottom: 1px solid var(--border2);
+  transition: background 0.08s;
+}
+.fcta-item:last-child { border-bottom: none; }
+.fcta-item:hover, .fcta-item.focused { background: var(--active); }
+.fcta-name { font-size: 12px; font-weight: bold; color: var(--text); flex: 1; }
+.fcta-name mark, .fcta-id mark { background: #fff3a0; font-weight: bold; padding: 0 1px; border-radius: 1px; }
+.fcta-id   { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.fcta-empty { padding: 7px 10px; font-size: 12px; color: var(--muted); font-style: italic; }
+.feat-catid-result {
+  font-size: 11px; padding: 4px 8px; display: none; max-width: 340px;
+  background: #f0fff0; border: 1px solid #88aa88; color: #2a6a2a;
+}
+.feat-catid-result.visible { display: block; }
+.feat-catid-result.error { background: #fff0f0; border-color: #cc8888; color: var(--red); }
+.feat-editor-btns { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+.feat-save { background: var(--white); border: 1px solid var(--border); padding: 4px 16px; font-size: 12px; font-weight: bold; cursor: pointer; }
+.feat-save:hover { background: var(--cream2); }
+.feat-save:disabled { opacity: 0.4; cursor: not-allowed; }
+.feat-cancel { background: var(--white); border: 1px solid var(--border); padding: 4px 12px; font-size: 12px; cursor: pointer; }
+.feat-cancel:hover { background: var(--cream2); }
+.feat-save-msg { font-size: 11px; color: #2a6a2a; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- ── CMS HEADER ── -->
+<div class="cms-header">
+  <div class="cms-header-top">
+    <a class="cms-logo" href="bh-mega-menu.html">
+      <div class="cms-logo-box">B&H</div>
+      <div class="cms-logo-sub">Photo<br>Video · Audio</div>
+    </a>
+    <div class="cms-top-links">
+      <a href="#">Advanced Search</a>
+      <a href="#">Multi-Item Search</a>
+      <a href="#">Multi-Category Id Search</a>
+      <a href="#">Browse</a>
+    </div>
+    <div class="cms-quick-search">
+      <span class="cms-quick-label">Quick Search:</span>
+      <select><option>Category ID</option><option>Item Code</option></select>
+      <div class="header-typeahead-wrap">
+        <input type="text" id="headerCatInput" autocomplete="off" placeholder="ID or name…" />
+        <div class="header-typeahead-dd" id="headerTypeaheadDd" role="listbox"></div>
+      </div>
+      <button onclick="headerSearch()">→</button>
+    </div>
+    <div class="cms-header-right">
+      <span class="cms-feedback">To Submit a Bug or Feedback Click Here</span>
+      <button class="cms-tools-btn">🔧</button>
+      <button class="cms-logout-btn">Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SUB-NAV ── -->
+<div class="cms-subnav">
+  <div class="cms-subnav-item">Item Navigation <span class="arrow">▼</span></div>
+  <div class="cms-subnav-item">jerelscs's Saved Reports <span class="arrow">▼</span></div>
+  <div class="cms-subnav-item" onclick="location.href='data-management.html'">Data Management <span class="arrow">▼</span></div>
+  <div class="cms-subnav-item">Admin <span class="arrow">▼</span></div>
+  <a class="cms-back-link" href="bh-mega-menu.html">← Back to Nav Preview</a>
+</div>
+
+<!-- ── PAGE CONTENT ── -->
+<div class="cms-page" id="cmsPage">
+  <!-- Content rendered by JS -->
+  <div style="padding:40px;text-align:center;color:#888;font-size:14px;">
+    Loading category…
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SHARED DATA (mirrors bh-mega-menu.html)
+// ═══════════════════════════════════════════════════════
+
+const CATID_MAP = {
+  '989':'photography','9581':'computers','3755':'provideo',
+  '1161':'lighting','12154':'proaudio','27989':'drones',
+  '1820':'camcorders','4600':'tv','3644':'av','978':'optics',
+  '8565':'mobile','3496':'surveillance','47088':'more','2870':'used'
+};
+
+const MENUS = {
+  photography: { heading:'All Photography', categories:[
+    {label:'Digital Cameras',children:[{label:'DSLRs'},{label:'Mirrorless'},{label:'Medium Format'},{label:'Point & Shoot'},{label:'Film Cameras'}]},
+    {label:'Lenses',children:[{label:'DSLR & Mirrorless Lenses'},{label:'Cinema Lenses'},{label:'Lens Adapters'}]},
+    {label:'Photo Tripods & Support'},
+    {label:'Photography Bags & Cases'},
+    {label:'Memory Cards & Accessories'},
+    {label:'Batteries & Power Accessories'},
+    {label:'Flashes & On Camera Lighting'},
+    {label:'Lens Filters'},
+    {label:'Lens Accessories'},
+    {label:'Photo Accessories'},
+    null,
+    {label:'Lighting & Studio'},
+    {label:'Underwater Photography'},
+    {label:'Darkroom Equipment'},
+    {label:'Books & Tutorials'},
+    {label:'Photo Software'},
+    null,
+    {label:'Scanners'},
+    {label:'Photo Printers'},
+    {label:'Presentation & Archiving'},
+  ]},
+  computers: { heading:'All Computers', categories:[
+    {label:'Laptops',children:[{label:'Windows Laptops'},{label:'MacBooks'},{label:'Chromebooks'},{label:'Gaming Laptops'}]},
+    {label:'Desktops',children:[{label:'iMacs'},{label:'Windows Desktops'},{label:'Mac Pro & Mac Studio'},{label:'Mini PCs'}]},
+    {label:'Tablets'},{label:'Monitors'},null,
+    {label:'Hard Drives & Storage'},{label:'Networking'},{label:'Printers & Scanners'},
+    {label:'Keyboards & Mice'},{label:'Computer Accessories'}
+  ]},
+  provideo: { heading:'All Pro Video', categories:[
+    {label:'Shop Podcasting'},{label:'Digital Cinema Cameras'},{label:'Camcorders'},
+    {label:'PTZ'},{label:'Studio & EFP Cameras'},{label:'Lenses & Lens Accessories'},null,
+    {label:'Video Tripods, Supports & Rigs'},{label:'Batteries & Power'},
+    {label:'Professional Video Cases'},{label:'Studio & EFP Equipment'},
+    {label:'Camcorder & Camera Peripherals'},{label:'Production Switchers & Controllers'},
+    {label:'Monitors'},
+    {label:'Recorders & Duplication',children:[
+      {label:'All Recorders & Duplication'},null,
+      {label:'Recording Monitors'},{label:'Portable Video Recorders'},
+      {label:'Studio Video Recorders & Players'},
+      {label:'Solid State Recorder Accessories',children:[
+        {label:'Solid State Recorder Accessories'},{label:'Mounting Brackets'},
+        {label:'Battery Mounting Plates'},{label:'Power Adapter Cables'},
+        {label:'Video Recording Media'},{label:'Video Recording Media Accessories'}
+      ]},
+      {label:'VTR Accessories'},{label:'CD/DVD Duplication'}
+    ]},
+    {label:'Post Production'},{label:'Lighting'},{label:'Tapes & Digital Media'}
+  ]},
+  lighting: { heading:'All Lighting', categories:[
+    {label:'LED Lights',children:[{label:'On-Camera LED'},{label:'Panel Lights'},{label:'Tube Lights'},{label:'Fresnel LED'}]},
+    {label:'Tungsten Lights'},{label:'HMI Lights'},{label:'Fluorescent Lights'},null,
+    {label:'Light Stands & Supports'},{label:'Modifiers & Diffusers'},
+    {label:'Grip & Rigging'},{label:'Reflectors & Flags'},{label:'Lighting Kits'}
+  ]},
+  proaudio: { heading:'All Pro Audio', categories:[
+    {label:'Microphones',children:[{label:'Condenser Mics'},{label:'Dynamic Mics'},{label:'Ribbon Mics'},{label:'Shotgun Mics'},{label:'Lavalier Mics'}]},
+    {label:'Headphones & Monitoring'},{label:'Mixers & Interfaces'},{label:'Recorders'},null,
+    {label:'Studio Monitors'},{label:'Signal Processing'},{label:'Cables & Connectors'},
+    {label:'PA Systems'},{label:'Live Sound'}
+  ]},
+  drones: { heading:'All Drones', categories:[
+    {label:'DJI Drones',children:[{label:'DJI Mavic'},{label:'DJI Air'},{label:'DJI Mini'},{label:'DJI Phantom'}]},
+    {label:'Autel Drones'},{label:'FPV Drones'},{label:'Enterprise Drones'},null,
+    {label:'Drone Accessories'},{label:'Batteries & Chargers'},{label:'Cases & Bags'},{label:'Propellers'}
+  ]},
+  camcorders: { heading:'All Camcorders', categories:[
+    {label:'Consumer Camcorders'},{label:'Professional Camcorders'},
+    {label:'Action Cameras',children:[{label:'GoPro'},{label:'DJI Action'},{label:'Insta360'}]},null,
+    {label:'Accessories'},{label:'Batteries & Power'},{label:'Memory & Storage'}
+  ]},
+  tv: { heading:'All TVs & Entertainment', categories:[
+    {label:'Televisions',children:[{label:'OLED TVs'},{label:'QLED TVs'},{label:'LED TVs'},{label:'8K TVs'},{label:'Outdoor TVs'}]},
+    {label:'Projectors & Screens'},{label:'Streaming Devices'},{label:'Blu-ray & DVD Players'},null,
+    {label:'Home Theater Audio'},{label:'Soundbars'},{label:'TV Mounts & Stands'},{label:'HDMI Cables & Adapters'}
+  ]},
+  av: { heading:'All Audio-Visual', categories:[
+    {label:'Presentation & Collaboration'},
+    {label:'Projectors',children:[{label:'Short Throw'},{label:'Long Throw'},{label:'Laser Projectors'}]},
+    {label:'Displays & Signage'},{label:'Switchers & Extenders'},null,
+    {label:'Conferencing Systems'},{label:'AV Cables & Connectivity'},{label:'Mounts & Racks'}
+  ]},
+  optics: { heading:'All Optics', categories:[
+    {label:'Binoculars'},{label:'Telescopes'},{label:'Spotting Scopes'},{label:'Rangefinders'},null,
+    {label:'Microscopes'},{label:'Night Vision'},{label:'Monoculars'},{label:'Eyewear & Accessories'}
+  ]},
+  mobile: { heading:'All Mobile', categories:[
+    {label:'Smartphones'},{label:'Tablets'},{label:'Smartwatches'},null,
+    {label:'Phone Cases & Protection'},{label:'Mobile Lenses & Accessories'},
+    {label:'Chargers & Power Banks'},{label:'Bluetooth & Wireless Audio'}
+  ]},
+  surveillance: { heading:'All Surveillance', categories:[
+    {label:'IP & Network Cameras',children:[{label:'Dome Cameras'},{label:'Bullet Cameras'},{label:'PTZ Cameras'}]},
+    {label:'NVRs & DVRs'},{label:'Video Management Software'},null,
+    {label:'Outdoor Cameras'},{label:'Indoor Cameras'},{label:'Access Control'},{label:'Intercoms'}
+  ]},
+  used: { heading:'Used Equipment', categories:[
+    {label:'Used Photography'},{label:'Used Pro Video'},{label:'Used Computers'},
+    {label:'Used Audio'},null,{label:'Used TVs'},{label:'Used Optics'}
+  ]},
+  more: { heading:'More Categories', categories:[
+    {label:'Musical Instruments'},{label:'Home & Garden'},{label:'Sports & Outdoors'},{label:'Automotive'}
+  ]}
+};
+
+// Extended static data per category
+
+const CAT_DETAIL = {
+  '989':  { name:'PHOTOGRAPHY-Photography', alt:'Photography', type:'Landing Page', status:'Protected', fn:'Show Category', user:'Slotkin Zevi', sku:'CAE5D4',
+            parents:[{name:'EDU-EDU Advantage Specials',id:13706},{name:'ROOT SHOW',id:3},{name:'SITE MAP-Site Map',id:13296},{name:'REBATES-Rebates & Promotions',id:19539},{name:'PHOTO ROOT SEARCH-Photography',id:15293}],
+            children:[
+              {group:'Cameras & Lenses'},
+              {name:'PHOTO-Digital Cameras',id:9811},{name:'PHOTO-Lenses',id:15492},{name:'PHOTO-Film Cameras',id:9812},
+              {group:'Accessories'},
+              {name:'PHOTO-Photo Tripods & Support',id:8310},{name:'PHOTO-Photography Bags & Cases',id:167},
+              {name:'PHOTO-Memory Cards & Accessories',id:6231},{name:'PHOTO-Batteries & Power Accessories',id:9818},
+              {name:'PHOTO-Flashes & On Camera Lighting',id:18316},{name:'FILTERS-Lens Filters',id:16041},
+              {name:'PHOTO-Lens Accessories',id:19428},{name:'PHOTO-Photo Accessories',id:19423},
+              {name:'PHOTO-Medium & Large Format Accessories',id:18209},{name:'FILM-Film',id:9954},
+              {name:'MOBILE-All Content Creator Accessories',id:24356},
+              {group:'More in Photography'},
+              {name:'LIGHTING-Lighting & Studio',id:1161},{name:'UNDERWATER PHOTO-Underwater Photography',id:11585},
+              {name:'DARKROOM-Darkroom Equipment',id:4942},{name:'PHOTO BOOKS-Books & Tutorials',id:19977},
+              {name:'COMPUTER SOFTWARE-Photo Software',id:13290},{name:'VOLUME PHOTO-Volume Photography',id:58799},
+              {group:'Scan, Print & Present'},
+              {name:'SCANNERS-Scanners',id:18318},{name:'PHOTOGRAPHY-Photo Printers',id:28467},
+              {name:'PHOTO-Presentation & Archiving',id:513}
+            ]},
+  '9581': { name:'COMPUTERS-Computers', alt:'Computers', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3},{name:'SITE MAP-Site Map',id:13296}],
+            children:[
+              {group:'Computers & Tablets'},
+              {name:'COMPUTERS-Laptops',id:18818},{name:'COMPUTERS-Mac',id:37094},
+              {name:'COMPUTERS-iPads & Tablets',id:16688},{name:'COMPUTERS-Desktops & Workstations',id:18817},
+              {group:'Hardware & Software'},
+              {name:'COMPUTERS-Computer Components',id:26717},{name:'COMPUTERS-Drives & Storage',id:13216},
+              {name:'COMPUTERS-Networking',id:13218},{name:'COMPUTERS-Monitors & Displays',id:25766},
+              {name:'COMPUTERS PERIPHERALS-Computer Peripherals',id:22339},{name:'PRINTERS-Printers',id:18317},
+              {name:'COMPUTERS-Gaming',id:24607},{name:'SCANNERS-Scanners',id:18318},
+              {name:'COMPUTER-Software & Tutorials',id:15626},
+              {group:'Accessories'},
+              {name:'CASES COMPUTERS-Tablet, Laptop & Computer Cases',id:25567},
+              {name:'CABLES COMPUTER-Computer Cables & Adapters',id:13346},
+              {name:'COMPUTERS2-Power Accessories',id:24365},{name:'FURNITURE COMPUTER-Furniture',id:17574},
+              {name:'TABLETS-Tablet Accessories',id:29794},{name:'COMPUTER-Notebook Accessories',id:23878},
+              {name:'COMPUTERS-STEM',id:41603},{name:'INSTALLATION-Installation',id:31898}
+            ]},
+  '3755': { name:'PROVIDEO-Pro Video', alt:'Pro Video', type:'Landing Page', status:'Active', fn:'Show Category', user:'Lichtig Aaron',
+            parents:[{name:'ROOT SHOW',id:3},{name:'SITE MAP-Site Map',id:13296}],
+            children:[
+              {group:'Pro Camcorders & Cameras'},
+              {name:'PV-Digital Cinema Cameras',id:3760},{name:'PV-Camcorders',id:3761},
+              {name:'PV-PTZ Cameras',id:3762},{name:'PV-Studio & EFP Cameras',id:3763},
+              {name:'PV-Lenses & Lens Accessories',id:3764},
+              {group:'Camcorder & Camera Accessories'},
+              {name:'PV-Batteries & Power',id:3770},{name:'PV-Professional Video Cases',id:3771},
+              {name:'PV-Camcorder & Camera Peripherals',id:3772},
+              {group:'Production Equipment'},
+              {name:'PV-Video Tripods, Supports & Rigs',id:3780},{name:'PV-Production Switchers & Controllers',id:3781},
+              {name:'PV-Monitors',id:3782},{name:'PV-Recorders & Duplication',id:3790},
+              {name:'PV-Studio & EFP Equipment',id:3783},{name:'PV-Post Production',id:3784},
+              {group:'Accessories'},
+              {name:'PV-Tapes & Digital Media',id:3791},{name:'PV-Lighting',id:3792},{name:'PV-Shop Podcasting',id:3793}
+            ]},
+  '1161': { name:'LIGHTING-Lighting', alt:'Lighting', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {group:'Photo & Video Lights'},
+              {name:'LEDS-LED Lights',id:48382},{name:'TUNGSTEN-Tungsten Lights',id:48456},
+              {name:'FLUORESCENT LIGHTING-Fluorescent Lights',id:1201},{name:'HMI LIGHTING-HMI Lights',id:1377},
+              {group:'Strobe Lighting'},
+              {name:'MONOLIGHTS-Monolights',id:1225},{name:'POWER PACK STROB-Power Packs & Heads',id:1168},
+              {name:'FLASHES-On Camera Flashes',id:647},{name:'LIGHTING-Remote Trigger Strobes',id:1239},
+              {group:'Specialty Lighting'},
+              {name:'DJ LIGHTS-DJ & Event Lighting',id:51869},{name:'STAGE LIGHTS-Stage Lighting',id:55126},
+              {name:'SPECIALTY LIGHTING-Additional Light Types',id:57187},
+              {group:'Light Modifiers'},
+              {name:'LIGHTING-Softboxes & Accessories',id:31158},{name:'LIGHTING-Umbrellas & Accessories',id:28874},
+              {name:'LIGHTING-Reflectors & Accessories',id:31160},{name:'LIGHTING-More Light Modifiers',id:57226},
+              {group:'Light Stands & Mounting'},
+              {name:'LIGHTSTANDS-Light Stands',id:5799},{name:'LIGHTSTANDS-Boom Equipment',id:1362},
+              {name:'LIGHTING-Truss Equipment',id:27767},{name:'LIGHTING-Light Stands & Mounting Accessories',id:19913},
+              {group:'Accessories'},
+              {name:'LIGHTING POWER-Power & Cables',id:20388},{name:'LIGHTING-Lighting Controllers',id:57235},
+              {name:'LIGHTING-Lighting Cases, Carts & Hand Trucks',id:6430},{name:'LIGHTING-Bulbs & Lamps',id:6280},
+              {name:'METERS-Light Meters & Accessories',id:21923},{name:'LIGHTING-Lighting Accessories',id:19916},
+              {group:'Studio Equipment'},
+              {name:'BACKGROUNDS-Backgrounds',id:1175},{name:'LIGHTING-Tabletop Shooting',id:11098},
+              {name:'STUDIO & STAGE EQUIP-Stage & Studio Accessories',id:2426},
+              {name:'LIGHTING-Special Effects Equipment',id:55457}
+            ]},
+  '12154':{ name:'PROAUDIO-Pro Audio', alt:'Pro Audio', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {name:'PRO AUDIO WIRELESS-Wireless Microphone Systems',id:15412},
+              {name:'PRO AUDIO-Microphones',id:14929},{name:'PRO AUDIO-Audio for Video',id:12158},
+              {name:'STUDIO-Studio Recording',id:56928},{name:'PRO AUDIO-Live Sound',id:20173},
+              {name:'PRO AUDIO-Mobile Recording',id:22902},{name:'PRO AUDIO-Podcasting',id:46431},
+              {name:'PRO AUDIO-Installation Sound',id:14235},{name:'PRO AUDIO-Musical Instruments',id:12156},
+              {name:'PRO AUDIO DJ-DJ Equipment',id:13932},{name:'PRO AUDIO RECORDING-Mixers',id:12162},
+              {name:'PRO AUDIO COMPUTER-Computer Audio Software',id:12198},
+              {group:'Accessories'},
+              {name:'PRO AUDIO 1-Headphones',id:38229},{name:'PRO AUDIO 1-Headphone Accessories',id:38230},
+              {name:'PRO AUDIO-Cables & Adapters',id:16059},{name:'PRO AUDIO-Audio Cases & Accessories',id:16061},
+              {name:'PRO AUDIO-Stands & Mounts',id:16062},{name:'FURNITURE-Furniture & Rack Accessories',id:20302},
+              {name:'PRO AUDIO ACCESSORIES-Acoustic Treatment',id:16066},{name:'PRO AUDIO-In-Line Problem Solvers',id:16123},
+              {name:'AUDIO MEDIA-Audio Media',id:2542},{name:'PRO AUDIO-Audio Books & Tutorials',id:10477},
+              {name:'PRO AUDIO-Power Equipment',id:16063},{name:'PRO AUDIO-General Accessories',id:16064}
+            ]},
+  '27989':{ name:'DRONES-Drones', alt:'Drones', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {group:'Prosumer & FPV Drones'},
+              {name:'AERIAL DRONE-Beginner Drones',id:40226},{name:'AERIAL DRONE-Prosumer Camera Drones',id:40227},
+              {name:'AERIAL DRONE-FPV Racing',id:40220},{name:'CAMCORDERS CONS-All Drones',id:23396},
+              {group:'Professional & Underwater Drones'},
+              {name:'AERIAL DRONE-Pro Cinema Drones',id:40228},{name:'AERIAL DRONE-Enterprise Drones',id:40229},
+              {name:'AERIAL DRONE-Thermal Drones',id:51901},{name:'UNDERWATER DRONES-Underwater Drones',id:25733},
+              {group:'Drone Parts & Accessories'},
+              {name:'AERIAL ACCESSORIES-Drone Batteries',id:51937},{name:'AERIAL ACCESSORIES-Drone Cases & Accessories',id:51935},
+              {name:'AERIAL ACCESSORIES-Drone Gimbals & Accessories',id:51936},{name:'AERIAL ACCESSORIES-Drone Replacement Parts',id:51938},
+              {name:'AERIAL ACCESSORIES-Drone FPVs & Accessories',id:51957},{name:'AERIAL ACCESSORIES-Remote Controllers & Accessories',id:51958},
+              {name:'AERIAL ACCESSORIES-Misc. Accessories',id:51976},{name:'UNDERWATER DRONES-Underwater Drone Accessories',id:25734},
+              {name:'AERIAL-Shop by Brand',id:27990}
+            ]},
+  '1820': { name:'CAMCORDERS-Camcorders', alt:'Camcorders', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {name:'CAMCORDERS AC-Action Cameras & Accessories',id:30708},
+              {name:'CAMCORDERS CONS-Consumer Camcorders',id:1871},{name:'CAMCORDERS PROF-Camcorders',id:1881},
+              {name:'CAMCORDERS 360-VR & 360 Video',id:29185},
+              {group:'Applications'},
+              {name:'HOME-Live Streaming from Home Solutions',id:46764},{name:'YOUTUBE LEVEL 1-Vlogging Creator',id:47040},
+              {group:'Accessories'},
+              {name:'VIDEO TAPES/CONS-Media',id:4125},{name:'CAMCORDERS-Support Equipment',id:20057},
+              {name:'MICROPHONES-Camera Microphones',id:46803},{name:'CAMCORDERS-Batteries & Power',id:2018},
+              {name:'CASES VIDEO/CONS-Consumer Video Cases',id:4104},{name:'CAMCORDERS CONS-Lenses',id:2102},
+              {name:'FILTERS-Lens Filters',id:16041},{name:'CAMCORDERS CONS-Lighting',id:20185},
+              {name:'UNDERWATER VIDEO-Underwater Equipment',id:28087},{name:'CAMCORDERS-Accessories',id:20553},
+              {name:'CAMCORDERS CONS-Editing Software & Peripherals',id:14767}
+            ]},
+  '4600': { name:'TV-TVs & Entertainment', alt:'TVs & Entertainment', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {group:'TV & Video'},
+              {name:'TELEVISIONS-Televisions',id:2500},{name:'HOME ENTERTAINMENT-Streaming & Media Players',id:11907},
+              {name:'VIDEO CONS-Blu-ray & DVD Players',id:8883},{name:'HOME ENTERTAINMENT-Soundbar Speakers',id:24072},
+              {group:'Home Audio'},
+              {name:'HOME ENTERTAINMENT-Speakers',id:17301},{name:'HOME ENTERTAINMENT-Receivers & Amplifiers',id:28820},
+              {name:'HOME ENTERTAINMENT-Home Audio Components',id:20666},{name:'HOME ENTERTAINMENT-Tabletop Audio',id:4915},
+              {group:'Home Theater Projection'},
+              {name:'MULTIMEDIA-Home Theater Projectors',id:2116},{name:'A/V PRESENTATION-Projection Screens',id:9829},
+              {name:'MULTIMEDIA-Projector Mounts & Accessories',id:27603},
+              {group:'Portable Audio'},
+              {name:'HOME ENTERTAINMENT-Portable Audio',id:29664},{name:'HEADPHONE-Headphones',id:12568},
+              {name:'MOBILE-Mobile Bluetooth Speakers',id:30055},
+              {group:'Gaming'},
+              {name:'GAMING COMPUTERS-PC Gaming',id:26337},{name:'HOME ENTERTAINMENT-VR Gaming',id:47038},
+              {group:'Accessories'},
+              {name:'HOME AUTOMATION-Smart Home',id:25493},{name:'HOME ENTERTAINMENT-Cables & Accessories',id:4221},
+              {name:'COMPUTER NETWORKING-Home Networking',id:30666},{name:'HOME ENTERTAINMENT-Mounts',id:4920},
+              {name:'HOME ENTERTAINMENT-Switchers, Extenders & More',id:16008},{name:'TELEVISIONS-Furniture',id:11373},
+              {name:'HOME ENTERTAINMENT-TV Frames',id:61172},{name:'HOME ENTERTAINMENT-General Accessories',id:3455},
+              {name:'HOME ENTERTAINMENT-Installation',id:16442}
+            ]},
+  '3644': { name:'AV-Audio-Visual', alt:'Audio-Visual', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {group:'Projection & Display'},
+              {name:'A/V PRESENTATION-Projectors',id:1520},{name:'A/V PRESENTATION-Commercial Monitors & Displays',id:17761},
+              {name:'A/V PRESENTATION-Video Presenters',id:17763},{name:'A/V PRESENTATION-Projection Screens',id:9829},
+              {group:'Complete Solutions'},
+              {name:'DIGITAL SIGNAGE-Digital Signage Solutions',id:28109},{name:'A/V PRESENTATION-Whiteboards, Easels & Displays',id:17760},
+              {name:'DIGITAL SIGNAGE-Video Walls Solutions',id:57124},{name:'VIDEO CONFERENCING-Video Conferencing Solutions',id:47756},
+              {group:'Audio Presentation'},
+              {name:'MULTIMEDIA-Assistive Listening',id:12571},{name:'MULTIMEDIA-Classroom Audio Systems',id:60732},
+              {name:'A/V PRESENTATION-Voice Recorders',id:17441},{name:'MULTIMEDIA-Tour Guide Audio Systems',id:60737},
+              {group:'Audio Conferencing'},
+              {name:'CONFERENCING-Conferencing Microphones',id:47841},{name:'CONFERENCING-Presentation Microphones',id:48565},
+              {name:'CONFERENCING-Conferencing Speakers',id:47759},{name:'CONFERENCING-Wireless Conferencing Systems',id:60463},
+              {group:'Pro Audio Solutions'},
+              {name:'A/V PRESENTATION-PA Systems',id:20834},{name:'CINEMA LOUDSPEAKER SYSTEM-Cinema Loudspeaker Systems',id:43895},
+              {name:'A/V PRESENTATION-Microphones',id:20840},{name:'PRO AUDIO-Installation Sound',id:14235},
+              {group:'Accessories'},
+              {name:'MULTIMEDIA-Multimedia Projector Accessories',id:1522},{name:'DIGITAL SIGNAGE-Commercial Displays Accessories',id:57130},
+              {name:'MULTIMEDIA-Cables & Accessories',id:8555},{name:'A/V PRESENTATION-Signal Processing & Distribution',id:24253},
+              {name:'A/V FURNITURE-Mounts & Carts',id:1562},{name:'LAMPS-Projector & Presentation Lamps',id:22894},
+              {name:'A/V PRESENTATION-Lecterns & Podiums',id:20835},{name:'A/V PRESENTATION-Presentation Timers & Displays',id:20585},
+              {name:'INSTALLATION-Installation',id:31898}
+            ]},
+  '978':  { name:'OPTICS-Optics', alt:'Optics', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {group:'Optics'},
+              {name:'BINOCULARS LP-Binoculars',id:979},{name:'TELESCOPES1-Telescopes',id:3389},
+              {name:'BINOCULARS-Spotting Scopes',id:980},{name:'RIFLESCOPES-Riflescopes & Sights',id:13521},
+              {name:'SCOPES-Night & Thermal Vision',id:14430},{name:'BINOCULARS-Field Accessories',id:25909},
+              {name:'OPTICS-Monoculars',id:17400},{name:'OPTICS-Laser Rangefinders',id:37565},
+              {name:'OPTICS-Microscopes',id:12412}
+            ]},
+  '8565': { name:'MOBILE-Mobile', alt:'Mobile', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {group:'Mobile Devices'},
+              {name:'MOBILE-iPads',id:51772},{name:'MOBILE-Android Tablets',id:51773},
+              {name:'MOBILE-Windows Tablets',id:51892},
+              {group:'Mobile Content Creator'},
+              {name:'MOBILE-Gimbal Stabilizers',id:51774},{name:'MOBILE-Vlogging Kits',id:51782},
+              {name:'MOBILE PHOTO-Rigs',id:24357},{name:'MOBILE-All Content Creator Accessories',id:24356},
+              {group:'Mobile Audio Solutions'},
+              {name:'MICROPHONES-Mobile Microphones',id:22909},{name:'PRO AUDIO iOS-Mobile Audio Interfaces',id:22903},
+              {name:'PRO AUDIO-Mobile Recording',id:22902},
+              {group:'General Accessories'},
+              {name:'MOBILE-Smartphone Accessories',id:24416},{name:'HEADPHONE-Headphones',id:12568},
+              {name:'MOBILE-Mobile Speakers',id:20270},{name:'MOBILE-Smart Glasses & Accessories',id:24005}
+            ]},
+  '3496': { name:'SURV-Surveillance', alt:'Surveillance', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[
+              {group:'Surveillance'},
+              {name:'CCTV2-Security Cameras',id:25510},{name:'CCTV-Surveillance Systems',id:3672},
+              {name:'CCTV-Video Recorders',id:25507},{name:'CCTV-Video Management Software',id:23196},
+              {name:'CCTV-Camera Accessories',id:23730},{name:'CCTV-Audio Surveillance',id:13862},
+              {group:'Security'},
+              {name:'SECURITY-Access Control',id:24824},{name:'MAINTENANCE & SAFETY-Safes & Cabinets',id:60186},
+              {name:'CCTV-Counter Surveillance',id:20323},{name:'SECURITY-Alarm Systems',id:24818},
+              {name:'SECURITY-Alarm Accessories',id:24821},{name:'CCTV-IP Speakers',id:61735},
+              {name:'CCTV 2-Illuminators',id:36144},
+              {group:'ID Card Issuance'},
+              {name:'ID CARD PRINTERS1-ID Card Printers',id:25553},
+              {name:'ID CARD PRINTERS-Badge Accessories',id:34573}
+            ]},
+  '47088':{ name:'MORE-More', alt:'More', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[{group:'More Categories'},{name:'MORE-Musical Instruments',id:47090},{name:'MORE-Home & Garden',id:47091},{name:'MORE-Sports & Outdoors',id:47092},{name:'MORE-Automotive',id:47093}]},
+  '2870': { name:'USED-Used Equipment', alt:'Used', type:'Landing Page', status:'Active', fn:'Show Category', user:'Admin',
+            parents:[{name:'ROOT SHOW',id:3}],
+            children:[{group:'Used Categories'},{name:'USED-Photography',id:2880},{name:'USED-Pro Video',id:2881},{name:'USED-Computers',id:2882},{name:'USED-Audio',id:2883},{name:'USED-TVs',id:2884},{name:'USED-Optics',id:2885}]}
+};
+
+// ═══════════════════════════════════════════════════════
+// FEATURED ITEMS STATE (localStorage for cross-page sync)
+// ═══════════════════════════════════════════════════════
+
+function loadFeaturedItems() {
+  try {
+    const raw = localStorage.getItem('bh_featured');
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function saveFeaturedItems(obj) {
+  try { localStorage.setItem('bh_featured', JSON.stringify(obj)); } catch {}
+}
+
+// ═══════════════════════════════════════════════════════
+// RESOLVE CATID FROM URL PARAM
+// ═══════════════════════════════════════════════════════
+
+function getCatIdFromUrl() {
+  return new URLSearchParams(window.location.search).get('catId') || '989';
+}
+
+// ═══════════════════════════════════════════════════════
+// PAGE RENDER
+// ═══════════════════════════════════════════════════════
+
+let currentCatId  = null;
+let currentKey    = null;
+let activeSlot    = null;
+let dragSrcIdx    = null;
+let pendingCatItem= null;
+let selectedLabel = null;
+
+function renderPage(catId) {
+  currentCatId = catId;
+  currentKey   = CATID_MAP[catId];
+  const detail = CAT_DETAIL[catId];
+  const menu   = MENUS[currentKey];
+  if (!detail || !menu) {
+    document.getElementById('cmsPage').innerHTML =
+      `<div style="padding:40px;text-align:center;color:#cc3300;font-size:14px;">Category ID ${catId} not found.</div>`;
+    return;
+  }
+
+  document.title = detail.name + ' — B&H Admin';
+  const alt = detail.alt || menu.heading.replace(/^All /, '');
+
+  document.getElementById('cmsPage').innerHTML = `
+
+    <!-- TOP BLOCK -->
+    <div class="page-top">
+      <div class="page-thumb">
+        <span>No Image</span>
+      </div>
+      <div class="page-title-area">
+        <div class="page-title">${detail.name}</div>
+        <div class="page-actions">
+          <button class="page-btn">Save</button>
+          <button class="page-btn">Cancel</button>
+          <button class="page-btn">Refresh Webpage</button>
+          <button class="page-btn">Create New</button>
+          <button class="page-btn">Duplicate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM FIELDS -->
+    <div class="form-section">
+      <div class="form-field">
+        <div class="form-label">Category Name</div>
+        <input class="form-input" value="${detail.name}" />
+      </div>
+      <div class="form-field">
+        <div class="form-label">Alternate Category Name</div>
+        <input class="form-input" value="${alt}" />
+      </div>
+      <div class="form-field">
+        <div class="form-label">Blurb</div>
+        <textarea class="form-textarea"></textarea>
+      </div>
+    </div>
+
+    <!-- TWO-COLUMN LOWER -->
+    <div class="lower-cols">
+
+      <!-- LEFT: metadata + info source + flags -->
+      <div class="col-left">
+
+        <div class="cms-box">
+          <table class="meta-table">
+            <tr><td class="meta-key">CatID:</td><td class="meta-val">${catId}</td></tr>
+            <tr><td class="meta-key">Category Type:</td><td class="meta-val">Landing Page</td></tr>
+            <tr><td class="meta-key">Sort By</td><td class="meta-val">Default</td></tr>
+            <tr><td class="meta-key">Status:</td><td class="meta-val">
+              <span class="status-badge">
+                <span class="status-dot ${detail.status === 'Protected' ? 'protected' : 'active'}"></span>
+                ${detail.status}
+              </span>
+            </td></tr>
+            ${detail.status === 'Protected' ? `<tr><td class="meta-key">Protection Note:</td><td class="meta-val"><textarea style="width:120px;height:36px;font-size:12px;border:1px solid #ccc;padding:3px;">Y</textarea></td></tr>` : ''}
+            <tr><td class="meta-key">Category Function</td><td class="meta-val">${detail.fn}</td></tr>
+            <tr><td class="meta-key">Assigned User:</td><td class="meta-val">${detail.user}</td></tr>
+            <tr><td class="meta-key">View Category…</td><td class="meta-val"><select class="meta-select"><option>Select Action</option><option>View on Site</option></select></td></tr>
+            <tr><td class="meta-key">Category Image Sku</td><td class="meta-val">${detail.sku ? `${detail.sku} <a class="meta-link">Edit</a> &nbsp; ×` : '<a class="meta-link">Add</a>'}</td></tr>
+            <tr><td class="meta-key">Category Image Upload</td><td class="meta-val"><strong>No Image Available</strong></td></tr>
+            <tr><td class="meta-key">Display Category Link</td><td class="meta-val"><a class="meta-link">URL</a></td></tr>
+          </table>
+        </div>
+
+        <div class="cms-box">
+          <div class="cms-box-header">Information Source:</div>
+          <textarea class="info-source-textarea"></textarea>
+          <div class="add-file-row">
+            <span class="add-file-link">Add File…</span>
+            <input class="add-file-input" type="text" />
+          </div>
+        </div>
+
+        <div class="cms-box">
+          <div class="flags-section">
+            <div class="flags-label">Flags:</div>
+            <select class="flags-select"><option>Flag Item As …</option><option>Exclude from Search</option><option>Priority Category</option></select>
+            <textarea class="flags-textarea"></textarea>
+          </div>
+        </div>
+
+        <div class="manage-btn-row">
+          <button class="manage-btn">Manage Refinements</button>
+        </div>
+
+      </div><!-- /col-left -->
+
+      <!-- RIGHT: parent cats + featured slots + child cats + stats -->
+      <div class="col-right">
+
+        <!-- Parent Categories -->
+        <div class="cms-box">
+          <div class="cms-box-header">Parent Categories</div>
+          <table class="cat-table">
+            <thead><tr><th>Category Name</th><th class="id-col">ID#</th></tr></thead>
+            <tbody>
+              ${detail.parents.map(p => `
+                <tr class="item-row"><td>${p.name}</td><td class="id-col">${p.id}</td></tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="cat-table-footer">
+            <span class="cat-action-link">Add Parent</span>
+          </div>
+        </div>
+
+        <!-- ★ FEATURED SLOTS PANEL ★ -->
+        <div class="cms-box" id="featPanel">
+          <div class="cms-box-header">★ Featured Slots (Mega Menu)</div>
+          <table class="feat-table" id="featTable">
+            <thead>
+              <tr>
+                <th style="width:20px;"></th>
+                <th style="width:48px;">#</th>
+                <th>Item</th>
+                <th class="type-col">Type</th>
+                <th class="acts-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="featTbody"></tbody>
+          </table>
+          <!-- Inline editor -->
+          <div class="feat-editor" id="featEditor">
+            <div class="feat-editor-title" id="featEditorTitle">Edit Slot 1</div>
+            <div class="feat-editor-fields">
+              <div class="feat-field">
+                <label>Type</label>
+                <select id="featTypeSelect">
+                  <option value="">— Select type —</option>
+                  <option value="label">Label</option>
+                  <option value="url">Custom URL</option>
+                  <option value="catid">CatID</option>
+                </select>
+              </div>
+              <div id="featFieldLabel" style="display:none">
+                <div class="feat-label-list" id="featLabelList"></div>
+              </div>
+              <div id="featFieldUrl" style="display:none;flex-direction:column;gap:8px;">
+                <div class="feat-field">
+                  <label>Custom URL</label>
+                  <input type="url" id="featUrlInput" placeholder="https://www.bhphotovideo.com/…" />
+                </div>
+                <div class="feat-field">
+                  <label>Display Label</label>
+                  <input type="text" id="featUrlLabel" placeholder="Text shown in mega menu" />
+                </div>
+              </div>
+              <div id="featFieldCatId" style="display:none">
+                <div class="feat-field">
+                  <label>CatID</label>
+                  <div class="feat-catid-row">
+                    <div class="feat-catid-wrap">
+                      <input type="text" id="featCatIdInput" placeholder="ID or name…" autocomplete="off" />
+                      <div class="feat-catid-ta" id="featCatIdTa" role="listbox"></div>
+                    </div>
+                    <button class="feat-catid-search" id="featCatIdSearchBtn">Select</button>
+                  </div>
+                </div>
+                <div class="feat-catid-result" id="featCatIdResult"></div>
+              </div>
+            </div>
+            <div class="feat-editor-btns">
+              <button class="feat-save" id="featSaveBtn" disabled>Save</button>
+              <button class="feat-cancel" id="featCancelBtn">Cancel</button>
+              <span class="feat-save-msg" id="featSaveMsg"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Child Categories -->
+        <div class="cms-box">
+          <div class="cms-box-header">Child Categories</div>
+          <table class="cat-table">
+            <thead><tr><th>Category Name</th><th class="id-col">ID#</th></tr></thead>
+            <tbody>
+              ${detail.children.map(c => c.group
+                ? `<tr class="group-header"><td colspan="2">${c.group}</td></tr>`
+                : `<tr class="item-row"><td>${c.name}</td><td class="id-col">${c.id}</td></tr>`
+              ).join('')}
+            </tbody>
+          </table>
+          <div class="cat-table-footer">
+            <span class="cat-action-link">Add Child</span>
+            <span class="cat-action-link">Sort Values</span>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="cms-box">
+          <table class="stats-table">
+            <thead><tr><th>Stats</th><th>Active</th><th>All</th></tr></thead>
+            <tbody>
+              ${['Total Skus','Master Skus','Manually Double Coded Skus','Rule Based Skus','Manually Excluded Skus','Manually Assigned Refinements','Rule-Based Assigned Refinements','Unpopulated Item-Refinements','Total Used Models','Unpopulated Series/Model','Series/Model NA','Mapped SKUs Count']
+                .map(s => `<tr><td>${s}:</td><td>0</td><td>0</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- /col-right -->
+    </div><!-- /lower-cols -->
+  `;
+
+  initFeatPanel();
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURED PANEL — LOGIC
+// ═══════════════════════════════════════════════════════
+
+function getSlots() {
+  const store = loadFeaturedItems();
+  if (!store[currentKey]) store[currentKey] = Array(10).fill(null);
+  return store[currentKey];
+}
+
+function setSlots(arr) {
+  const store = loadFeaturedItems();
+  store[currentKey] = arr;
+  saveFeaturedItems(store);
+}
+
+function initFeatPanel() {
+  renderFeatRows();
+
+  document.getElementById('featTypeSelect').addEventListener('change', onTypeChange);
+  document.getElementById('featSaveBtn').addEventListener('click', onFeatSave);
+  document.getElementById('featCancelBtn').addEventListener('click', closeFeatEditor);
+  document.getElementById('featCatIdSearchBtn').addEventListener('click', () => {
+    // "Select" button — commits the currently highlighted/typed item
+    const focused = document.getElementById('featCatIdTa').querySelector('.fcta-item.focused');
+    if (focused) { selectFctaItem(focused.dataset.id); }
+    else { featCatIdSearch(document.getElementById('featCatIdInput').value.trim()); }
+  });
+  document.getElementById('featCatIdInput').addEventListener('input',  () => renderFcta(document.getElementById('featCatIdInput').value));
+  document.getElementById('featCatIdInput').addEventListener('focus',  () => { if (document.getElementById('featCatIdInput').value.trim()) renderFcta(document.getElementById('featCatIdInput').value); });
+  document.getElementById('featCatIdInput').addEventListener('blur',   () => setTimeout(closeFcta, 150));
+  document.getElementById('featCatIdInput').addEventListener('keydown', e => {
+    const dd = document.getElementById('featCatIdTa');
+    const isOpen = dd.classList.contains('open');
+    if (e.key === 'ArrowDown') { e.preventDefault(); isOpen ? moveFctaFocus(1) : renderFcta(document.getElementById('featCatIdInput').value); }
+    else if (e.key === 'ArrowUp')  { e.preventDefault(); moveFctaFocus(-1); }
+    else if (e.key === 'Escape')   { closeFcta(); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const focused = dd.querySelector('.fcta-item.focused');
+      if (focused) selectFctaItem(focused.dataset.id);
+      else featCatIdSearch(document.getElementById('featCatIdInput').value.trim());
+    }
+  });
+  document.getElementById('featUrlInput').addEventListener('input', updateFeatSaveBtn);
+  document.getElementById('featUrlLabel').addEventListener('input', updateFeatSaveBtn);
+}
+
+function renderFeatRows() {
+  const tbody = document.getElementById('featTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const slots = getSlots();
+
+  slots.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'feat-row' + (i === activeSlot ? ' active-row' : '');
+    tr.draggable = true;
+    tr.dataset.idx = i;
+
+    // drag handle
+    const tdHandle = document.createElement('td');
+    tdHandle.innerHTML = `<span class="feat-drag-handle" title="Drag to reorder">&#8942;&#8942;</span>`;
+    tr.appendChild(tdHandle);
+
+    // slot num
+    const tdNum = document.createElement('td');
+    tdNum.className = 'feat-slot-num';
+    tdNum.textContent = `Slot ${i + 1}`;
+    tr.appendChild(tdNum);
+
+    // item name
+    const tdName = document.createElement('td');
+    tdName.className = 'feat-item-name' + (item ? '' : ' empty');
+    tdName.textContent = item ? item.label : '— empty';
+    tr.appendChild(tdName);
+
+    // type
+    const tdType = document.createElement('td');
+    if (item) tdType.innerHTML = `<span class="feat-type-badge">${item.type}</span>`;
+    tr.appendChild(tdType);
+
+    // actions
+    const tdActs = document.createElement('td');
+    tdActs.className = 'feat-row-acts';
+    if (item) {
+      tdActs.innerHTML = `<span class="feat-edit-link" data-i="${i}">Edit</span><span class="feat-rm-link" data-i="${i}">Remove</span>`;
+    } else {
+      tdActs.innerHTML = `<span class="feat-add-link" data-i="${i}">Add +</span>`;
+    }
+    tr.appendChild(tdActs);
+
+    // click handlers
+    tdActs.querySelectorAll('[data-i]').forEach(el => {
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        const idx = parseInt(el.dataset.i);
+        if (el.classList.contains('feat-rm-link')) {
+          const arr = getSlots(); arr[idx] = null; setSlots(arr);
+          if (activeSlot === idx) closeFeatEditor();
+          renderFeatRows();
+        } else {
+          openFeatEditor(idx);
+        }
+      });
+    });
+
+    // drag events
+    tr.addEventListener('dragstart', e => {
+      dragSrcIdx = i;
+      tr.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setDragImage(tr, 20, 14);
+    });
+    tr.addEventListener('dragend', () => {
+      tr.classList.remove('dragging');
+      tbody.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+      dragSrcIdx = null;
+    });
+    tr.addEventListener('dragover', e => {
+      if (dragSrcIdx === null || dragSrcIdx === i) return;
+      e.preventDefault();
+      tbody.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+      tr.classList.add('drag-over');
+    });
+    tr.addEventListener('dragleave', e => {
+      if (!tr.contains(e.relatedTarget)) tr.classList.remove('drag-over');
+    });
+    tr.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIdx === null || dragSrcIdx === i) return;
+      const arr = getSlots();
+      const moved = arr.splice(dragSrcIdx, 1)[0];
+      arr.splice(i, 0, moved);
+      if (activeSlot === dragSrcIdx) activeSlot = i;
+      else if (activeSlot !== null) {
+        if (dragSrcIdx < activeSlot && i >= activeSlot) activeSlot--;
+        else if (dragSrcIdx > activeSlot && i <= activeSlot) activeSlot++;
+      }
+      setSlots(arr);
+      dragSrcIdx = null;
+      renderFeatRows();
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+// ─── EDITOR OPEN / CLOSE ─────────────────────────────────────────────────────
+function openFeatEditor(slotIdx) {
+  activeSlot = slotIdx;
+  const existing = getSlots()[slotIdx];
+  renderFeatRows(); // update active highlight
+
+  document.getElementById('featEditorTitle').textContent =
+    (existing ? 'Edit' : 'Add to') + ` Slot ${slotIdx + 1}`;
+
+  document.getElementById('featTypeSelect').value = existing ? existing.type : '';
+  document.getElementById('featUrlInput').value   = existing?.type === 'url' ? existing.url   : '';
+  document.getElementById('featUrlLabel').value   = existing?.type === 'url' ? existing.label : '';
+  document.getElementById('featCatIdInput').value = existing?.type === 'catid' ? existing.catId : '';
+  document.getElementById('featCatIdResult').className = 'feat-catid-result';
+  document.getElementById('featCatIdResult').textContent = '';
+  closeFcta();
+  pendingCatItem = null;
+  selectedLabel  = existing?.type === 'label' ? existing : null;
+
+  showFeatFields(existing ? existing.type : '');
+  if (existing?.type === 'label') renderFeatLabelList(existing.label);
+  else renderFeatLabelList(null);
+  updateFeatSaveBtn();
+
+  document.getElementById('featEditor').classList.add('open');
+  document.getElementById('featEditor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeFeatEditor() {
+  activeSlot = null;
+  document.getElementById('featEditor').classList.remove('open');
+  renderFeatRows();
+}
+
+// ─── TYPE FIELDS ─────────────────────────────────────────────────────────────
+function showFeatFields(type) {
+  document.getElementById('featFieldLabel').style.display  = type === 'label' ? 'block' : 'none';
+  const urlEl = document.getElementById('featFieldUrl');
+  urlEl.style.display    = type === 'url' ? 'flex' : 'none';
+  urlEl.style.flexDirection = 'column';
+  urlEl.style.gap = '8px';
+  document.getElementById('featFieldCatId').style.display  = type === 'catid' ? 'block' : 'none';
+  if (type === 'label') renderFeatLabelList(selectedLabel ? selectedLabel.label : null);
+}
+
+function onTypeChange() {
+  pendingCatItem = null; selectedLabel = null;
+  document.getElementById('featCatIdResult').className = 'feat-catid-result';
+  document.getElementById('featCatIdResult').textContent = '';
+  showFeatFields(document.getElementById('featTypeSelect').value);
+  updateFeatSaveBtn();
+}
+
+// ─── LABEL LIST ──────────────────────────────────────────────────────────────
+function getLabelsForCat() {
+  // Priority 1: user-edited labels from Data Management (localStorage)
+  try {
+    const raw = localStorage.getItem('bh_dm_state');
+    if (raw) {
+      const stored = JSON.parse(raw);
+      const lbls = stored.labels?.[currentCatId];
+      if (lbls && lbls.length) return lbls.map(l => ({ label: l.name }));
+    }
+  } catch {}
+
+  // Priority 2: group headers extracted from CAT_DETAIL children
+  const groups = (CAT_DETAIL[currentCatId]?.children || [])
+    .filter(c => c.group)
+    .map(c => ({ label: c.group }));
+  if (groups.length) return groups;
+
+  // Priority 3: fallback — nothing configured yet
+  return [];
+}
+
+function renderFeatLabelList(selectedLbl) {
+  const list = document.getElementById('featLabelList');
+  list.innerHTML = '';
+  const labels = getLabelsForCat();
+  const used   = new Set(getSlots().filter((s,i) => s && i !== activeSlot).map(s => s.label));
+
+  if (!labels.length) {
+    list.innerHTML = '<div style="padding:8px 10px;font-size:11px;color:#888;font-style:italic;">No labels defined. Add them in Data Management.</div>';
+    return;
+  }
+
+  labels.forEach(cat => {
+    const isSelected = cat.label === selectedLbl;
+    const isUsed = used.has(cat.label) && !isSelected;
+    const div = document.createElement('div');
+    div.className = 'feat-label-item' + (isSelected ? ' selected' : '') + (isUsed ? ' used' : '');
+    div.innerHTML = `<span>${cat.label}</span>${isSelected ? '<span class="check">✓</span>' : ''}`;
+    if (!isUsed) {
+      div.addEventListener('click', () => {
+        selectedLabel = { type:'label', label:cat.label };
+        renderFeatLabelList(cat.label);
+        updateFeatSaveBtn();
+      });
+    }
+    list.appendChild(div);
+  });
+}
+
+let fctaFocusIdx = -1;
+
+function fctaHL(text, q) {
+  if (!q) return text;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i === -1) return text;
+  return text.slice(0, i) + '<mark>' + text.slice(i, i + q.length) + '</mark>' + text.slice(i + q.length);
+}
+
+// Combined pool: top-level nav cats + all child categories of current category
+function buildFctaPool() {
+  const pool = [];
+  Object.entries(CATID_MAP).forEach(([id, key]) => {
+    pool.push({ id: String(id), name: MENUS[key].heading.replace(/^All /, ''), source: 'nav' });
+  });
+  (CAT_DETAIL[currentCatId]?.children || []).forEach(c => {
+    if (!c.group && c.id) pool.push({ id: String(c.id), name: c.name, source: 'child' });
+  });
+  return pool;
+}
+
+function renderFcta(query) {
+  const dd = document.getElementById('featCatIdTa');
+  const q  = query.trim().toLowerCase();
+  dd.innerHTML = '';
+  fctaFocusIdx = -1;
+  if (!q) { closeFcta(); return; }
+
+  const matches = buildFctaPool().filter(c =>
+    c.id.includes(q) || c.name.toLowerCase().includes(q)
+  );
+
+  if (!matches.length) {
+    dd.innerHTML = `<div class="fcta-empty">No categories match "${query}"</div>`;
+    dd.classList.add('open'); return;
+  }
+
+  matches.forEach(cat => {
+    const item = document.createElement('div');
+    item.className = 'fcta-item';
+    item.dataset.id = cat.id;
+    item.innerHTML =
+      `<span class="fcta-name">${fctaHL(cat.name, query.trim())}</span>` +
+      `<span class="fcta-id">CatID: ${fctaHL(cat.id, query.trim())}</span>`;
+    item.addEventListener('mousedown', e => e.preventDefault());
+    item.addEventListener('click', () => selectFctaItem(cat.id));
+    dd.appendChild(item);
+  });
+  dd.classList.add('open');
+}
+
+function closeFcta() {
+  document.getElementById('featCatIdTa').classList.remove('open');
+  fctaFocusIdx = -1;
+}
+
+function moveFctaFocus(dir) {
+  const items = document.getElementById('featCatIdTa').querySelectorAll('.fcta-item');
+  if (!items.length) return;
+  items[fctaFocusIdx]?.classList.remove('focused');
+  fctaFocusIdx = Math.max(0, Math.min(items.length - 1, fctaFocusIdx + dir));
+  items[fctaFocusIdx].classList.add('focused');
+  items[fctaFocusIdx].scrollIntoView({ block: 'nearest' });
+}
+
+function selectFctaItem(id) {
+  document.getElementById('featCatIdInput').value = id;
+  closeFcta();
+  featCatIdSearch(id);
+}
+
+function featCatIdSearch(id) {
+  if (id === undefined) id = document.getElementById('featCatIdInput').value.trim();
+  const result = document.getElementById('featCatIdResult');
+  result.className = 'feat-catid-result';
+  pendingCatItem = null;
+  if (!id) { result.textContent = ''; return; }
+
+  // 1. Top-level nav categories
+  const key = CATID_MAP[id];
+  if (key) {
+    result.textContent = `✓ Found: ${MENUS[key].heading}`;
+    result.classList.add('visible');
+    pendingCatItem = { type:'catid', catId:id, label: MENUS[key].heading.replace(/^All /,''), children: MENUS[key].categories.filter(Boolean) };
+    updateFeatSaveBtn(); return;
+  }
+
+  // 2. Child categories of the current category
+  const child = (CAT_DETAIL[currentCatId]?.children || []).find(c => !c.group && String(c.id) === String(id));
+  if (child) {
+    const displayName = child.name.replace(/^[A-Z][A-Z\s]*-/, '').trim();
+    result.textContent = `✓ Found: ${child.name}`;
+    result.classList.add('visible');
+    pendingCatItem = { type:'catid', catId:id, label: displayName, children: [] };
+    updateFeatSaveBtn(); return;
+  }
+
+  result.textContent = `✕ CatID "${id}" not found`;
+  result.classList.add('visible', 'error');
+  updateFeatSaveBtn();
+}
+
+// ─── SAVE BTN STATE ───────────────────────────────────────────────────────────
+function updateFeatSaveBtn() {
+  const type = document.getElementById('featTypeSelect').value;
+  let ok = false;
+  if (type === 'label') ok = !!selectedLabel;
+  if (type === 'url')   ok = document.getElementById('featUrlInput').value.trim().length > 0 && document.getElementById('featUrlLabel').value.trim().length > 0;
+  if (type === 'catid') ok = !!pendingCatItem;
+  document.getElementById('featSaveBtn').disabled = !ok;
+}
+
+// ─── SAVE ─────────────────────────────────────────────────────────────────────
+function onFeatSave() {
+  const type = document.getElementById('featTypeSelect').value;
+  let item = null;
+  if (type === 'label' && selectedLabel) item = selectedLabel;
+  if (type === 'catid' && pendingCatItem) item = pendingCatItem;
+  if (type === 'url') {
+    const url = document.getElementById('featUrlInput').value.trim();
+    const lbl = document.getElementById('featUrlLabel').value.trim();
+    if (url && lbl) item = { type:'url', url, label:lbl };
+  }
+  if (!item) return;
+  const arr = getSlots(); arr[activeSlot] = item; setSlots(arr);
+  document.getElementById('featSaveMsg').textContent = '✓ Saved';
+  setTimeout(() => { document.getElementById('featSaveMsg').textContent = ''; }, 2000);
+  openFeatEditor(activeSlot); // refresh editor with saved state
+}
+
+// ═══════════════════════════════════════════════════════
+// HEADER QUICK-SEARCH WITH TYPEAHEAD
+// ═══════════════════════════════════════════════════════
+// HEADER QUICK-SEARCH WITH TYPEAHEAD
+// ═══════════════════════════════════════════════════════
+
+const headerCatInput    = document.getElementById('headerCatInput');
+const headerTypeaheadDd = document.getElementById('headerTypeaheadDd');
+
+// Build search pool: all nav cats + all child items across all categories
+function buildHeaderPool() {
+  const pool = [];
+  // Nav categories
+  Object.entries(CATID_MAP).forEach(([id, key]) => {
+    pool.push({
+      id: String(id),
+      name: MENUS[key].heading.replace(/^All /, ''),
+      type: 'nav'
+    });
+  });
+  // All child items from every CAT_DETAIL entry
+  Object.entries(CAT_DETAIL).forEach(([catId, detail]) => {
+    (detail.children || []).forEach(c => {
+      if (!c.group && c.id) {
+        pool.push({ id: String(c.id), name: c.name, type: 'child', parentId: catId });
+      }
+    });
+  });
+  return pool;
+}
+
+let htaFocusIdx = -1;
+let htaPool = null;  // lazy-built
+
+function htaHL(text, q) {
+  if (!q) return text;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i === -1) return text;
+  return text.slice(0, i) + '<mark>' + text.slice(i, i + q.length) + '</mark>' + text.slice(i + q.length);
+}
+
+function renderHta(query) {
+  if (!htaPool) htaPool = buildHeaderPool();
+  const q = query.trim().toLowerCase();
+  headerTypeaheadDd.innerHTML = '';
+  htaFocusIdx = -1;
+  if (!q) { closeHta(); return; }
+
+  const matches = htaPool.filter(c =>
+    c.id.includes(q) || c.name.toLowerCase().includes(q)
+  ).slice(0, 18);  // cap at 18 results
+
+  if (!matches.length) {
+    headerTypeaheadDd.innerHTML = `<div class="hta-empty">No categories match "${query}"</div>`;
+    headerTypeaheadDd.classList.add('open');
+    return;
+  }
+
+  matches.forEach(cat => {
+    const item = document.createElement('div');
+    item.className = 'hta-item';
+    item.dataset.id = cat.id;
+    item.dataset.type = cat.type;
+    if (cat.parentId) item.dataset.parentId = cat.parentId;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'hta-item-name';
+    nameSpan.innerHTML = htaHL(cat.name, query.trim());
+
+    const idSpan = document.createElement('span');
+    idSpan.className = 'hta-item-id';
+    idSpan.innerHTML = 'CatID: ' + htaHL(cat.id, query.trim());
+
+    item.appendChild(nameSpan);
+    item.appendChild(idSpan);
+
+    item.addEventListener('mousedown', e => e.preventDefault());
+    item.addEventListener('click', () => {
+      headerCatInput.value = cat.id;
+      closeHta();
+      loadCatById(cat.id, cat.type, cat.parentId);
+    });
+
+    headerTypeaheadDd.appendChild(item);
+  });
+
+  headerTypeaheadDd.classList.add('open');
+}
+
+function closeHta() {
+  headerTypeaheadDd.classList.remove('open');
+  htaFocusIdx = -1;
+}
+
+function moveHtaFocus(dir) {
+  const items = headerTypeaheadDd.querySelectorAll('.hta-item');
+  if (!items.length) return;
+  items[htaFocusIdx]?.classList.remove('focused');
+  htaFocusIdx = Math.max(0, Math.min(items.length - 1, htaFocusIdx + dir));
+  items[htaFocusIdx].classList.add('focused');
+  items[htaFocusIdx].scrollIntoView({ block: 'nearest' });
+}
+
+// Load a category by re-rendering in place — no page reload needed
+function loadCatById(id, type, parentId) {
+  const idStr = String(id).trim();
+  if (!idStr) return;
+
+  // Nav category — render directly
+  if (CATID_MAP[idStr]) {
+    renderPage(idStr);
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  // Child category — navigate to its parent category and highlight the child
+  if (parentId && CATID_MAP[parentId]) {
+    renderPage(parentId);
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  // Search all CAT_DETAIL children as fallback
+  for (const [catId, detail] of Object.entries(CAT_DETAIL)) {
+    const found = (detail.children || []).find(c => !c.group && String(c.id) === idStr);
+    if (found && CATID_MAP[catId]) {
+      renderPage(catId);
+      window.scrollTo(0, 0);
+      return;
+    }
+  }
+
+  // Nothing matched
+  document.getElementById('cmsPage').innerHTML =
+    `<div style="padding:40px;text-align:center;color:var(--red);font-size:14px;">Category ID "${idStr}" not found.</div>`;
+}
+
+function headerSearch() {
+  closeHta();
+  // Try to match from pool first
+  if (!htaPool) htaPool = buildHeaderPool();
+  const q = headerCatInput.value.trim();
+  const exact = htaPool.find(c => c.id === q);
+  if (exact) {
+    loadCatById(exact.id, exact.type, exact.parentId);
+  } else {
+    loadCatById(q);
+  }
+}
+
+// Wire up events
+headerCatInput.addEventListener('input',  () => renderHta(headerCatInput.value));
+headerCatInput.addEventListener('focus',  () => { if (headerCatInput.value.trim()) renderHta(headerCatInput.value); });
+headerCatInput.addEventListener('blur',   () => setTimeout(closeHta, 150));
+headerCatInput.addEventListener('keydown', e => {
+  const isOpen = headerTypeaheadDd.classList.contains('open');
+  if (e.key === 'ArrowDown') { e.preventDefault(); isOpen ? moveHtaFocus(1) : renderHta(headerCatInput.value); }
+  else if (e.key === 'ArrowUp')  { e.preventDefault(); moveHtaFocus(-1); }
+  else if (e.key === 'Escape')   { closeHta(); }
+  else if (e.key === 'Enter') {
+    e.preventDefault();
+    const focused = headerTypeaheadDd.querySelector('.hta-item.focused');
+    if (focused) {
+      headerCatInput.value = focused.dataset.id;
+      closeHta();
+      loadCatById(focused.dataset.id, focused.dataset.type, focused.dataset.parentId);
+    } else {
+      headerSearch();
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+renderPage(getCatIdFromUrl());
+</script>
+</body>
+</html>

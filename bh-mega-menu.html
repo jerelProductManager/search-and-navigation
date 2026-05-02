@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B&H Navigation Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green: #2d7e1e;
+    --green-dark: #225f16;
+    --green-hover: #36941f;
+    --green-active: #1a5010;
+    --red: #cc0000;
+    --text: #222;
+    --text-light: #555;
+    --border: #ddd;
+    --link: #1a6ea8;
+    --link-hover: #0d4a72;
+    --bg-white: #fff;
+    --bg-header: #f5f5f5;
+    --divider: #e0e0e0;
+  }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: #f0f0f0;
+  }
+
+  /* ── TOP UTILITY BAR ── */
+  .utility-bar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 5px 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 11.5px;
+    color: #444;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .utility-bar a { color: #444; text-decoration: none; }
+  .utility-bar a:hover { text-decoration: underline; }
+  .utility-bar .tagline { color: var(--green); font-weight: bold; margin-left: auto; }
+  .utility-bar .separator { color: #bbb; }
+
+  /* ── MAIN HEADER ── */
+  .main-header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .logo-box {
+    background: var(--red);
+    color: #fff;
+    font-size: 22px;
+    font-weight: 900;
+    padding: 6px 10px;
+    line-height: 1;
+    letter-spacing: -1px;
+    border-radius: 2px;
+  }
+  .logo-sub {
+    font-size: 9px;
+    color: #444;
+    margin-left: 6px;
+    line-height: 1.4;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .expert-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+  .expert-icon { font-size: 22px; color: #555; }
+  .expert-text { font-size: 11px; color: #555; line-height: 1.4; }
+  .expert-text strong { font-size: 14px; color: var(--text); display: block; }
+
+  .search-wrap {
+    flex: 1;
+    display: flex;
+    max-width: 560px;
+  }
+  .search-wrap input {
+    flex: 1;
+    border: 2px solid var(--border);
+    border-right: none;
+    padding: 8px 12px;
+    font-size: 13px;
+    outline: none;
+    border-radius: 2px 0 0 2px;
+  }
+  .search-wrap input:focus { border-color: #999; }
+  .search-wrap button {
+    background: #555;
+    border: none;
+    padding: 0 14px;
+    cursor: pointer;
+    border-radius: 0 2px 2px 0;
+    color: white;
+    font-size: 16px;
+  }
+  .search-wrap button:hover { background: #333; }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .header-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 11px;
+    gap: 2px;
+    cursor: pointer;
+  }
+  .header-action svg { width: 22px; height: 22px; color: #555; }
+  .header-action .deal-timer { color: #e03030; font-weight: bold; font-size: 11px; }
+
+  /* ── GREEN NAV BAR ── */
+  .nav-bar {
+    background: var(--green);
+    display: flex;
+    align-items: stretch;
+    position: relative;
+    z-index: 200;
+    user-select: none;
+  }
+
+  .nav-item {
+    position: static;
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 10px 13px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: normal;
+    text-decoration: none;
+    white-space: nowrap;
+    height: 100%;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: background 0.1s;
+  }
+  .nav-link:hover,
+  .nav-item.active > .nav-link {
+    background: var(--green-dark);
+    border-bottom-color: #fff;
+  }
+  .nav-link.used { color: #ffe066; }
+  .nav-link.specials { color: #ffe066; }
+
+  /* ── MEGA MENU ── */
+  .mega-overlay {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 300;
+  }
+
+  .nav-bar:has(.nav-item.active) .mega-overlay { display: block; }
+
+  .mega-menu {
+    background: #fff;
+    border: 1px solid #bbb;
+    border-top: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    display: flex;
+    min-height: 320px;
+    width: 100%;
+  }
+
+  /* Column 1 – parent categories */
+  .col-categories {
+    width: 230px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--divider);
+    padding: 12px 0;
+    overflow-y: auto;
+    max-height: 520px;
+  }
+
+  .col-heading {
+    padding: 6px 18px 10px;
+    font-weight: bold;
+    font-size: 13.5px;
+    color: var(--text);
+    border-bottom: 2px solid var(--green);
+    margin-bottom: 6px;
+  }
+  .col-heading a { color: inherit; text-decoration: none; }
+  .col-heading a:hover { color: var(--link); }
+
+  .cat-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 18px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.1s;
+    gap: 4px;
+  }
+  .cat-item:hover,
+  .cat-item.active {
+    background: #f2f7f0;
+    color: var(--green);
+  }
+  .cat-item .chevron {
+    font-size: 10px;
+    color: #888;
+    flex-shrink: 0;
+  }
+  .cat-item.has-children .chevron { color: var(--green); }
+
+  .cat-divider {
+    height: 1px;
+    background: var(--divider);
+    margin: 8px 0;
+  }
+
+  /* Column 2 – sub categories (slides in) */
+  .col-sub {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--divider);
+    padding: 12px 0;
+    display: none;
+    overflow-y: auto;
+    max-height: 520px;
+  }
+  .col-sub.visible { display: block; }
+
+  .sub-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 18px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.1s;
+    gap: 4px;
+  }
+  .sub-item:hover,
+  .sub-item.active {
+    background: #f2f7f0;
+    color: var(--green);
+  }
+  .sub-item.has-children .chevron { color: var(--green); font-size: 10px; flex-shrink: 0; }
+
+  /* Column 3 – tertiary (slides in further) */
+  .col-tertiary {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--divider);
+    padding: 12px 0;
+    display: none;
+    overflow-y: auto;
+    max-height: 520px;
+  }
+  .col-tertiary.visible { display: block; }
+
+  /* Column – contextual links (always visible, right of categories) */
+  .col-contextual {
+    width: 260px;
+    flex-shrink: 0;
+    padding: 12px 16px;
+    background: #fff;
+    border-left: 1px solid var(--divider);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* fills remaining white space */
+  .col-spacer {
+    flex: 1;
+    background: #fff;
+  }
+
+  .ctx-section { display: flex; flex-direction: column; gap: 0; }
+
+  .ctx-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: 3px;
+    transition: background 0.12s;
+  }
+  .ctx-link:hover { background: #eef5ec; color: var(--green); }
+  .ctx-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    color: var(--green);
+  }
+
+  .ctx-divider {
+    height: 1px;
+    background: var(--divider);
+    margin: 4px 0;
+  }
+
+  .ctx-expert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: #fff;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .ctx-expert:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── PAGE BODY ── */
+  .page-body {
+    padding: 24px 20px;
+    color: #666;
+    font-size: 14px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .page-body h2 { font-size: 22px; color: #333; margin-bottom: 8px; }
+  .page-body p { line-height: 1.6; }
+
+  /* backdrop */
+  .mega-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.08);
+  }
+  .nav-bar:has(.nav-item.active) ~ .mega-backdrop { display: block; }
+
+  /* ── PAGE SPACER (so content isn't hidden behind admin panel) ── */
+  body { padding-bottom: 320px; }
+
+  /* ── FEATURED BADGE in mega menu ── */
+  .cat-item.featured-item { background: #f8fff6; }
+  .cat-item.featured-item .feat-star {
+    font-size: 9px;
+    color: var(--green);
+    background: #d8f0d0;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-left: 4px;
+    flex-shrink: 0;
+    font-weight: bold;
+    letter-spacing: 0.3px;
+  }
+  .feat-section-label {
+    padding: 5px 18px 3px;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+  .feat-section-end {
+    height: 1px;
+    background: var(--divider);
+    margin: 6px 0 4px;
+  }
+
+  /* ── ADMIN PANEL — B&H Internal CMS Design System ── */
+  :root {
+    --adm-green:   #3a5533;
+    --adm-green2:  #4a6a42;
+    --adm-cream:   #f0e8c8;
+    --adm-cream2:  #e6dba8;
+    --adm-red:     #cc3300;
+    --adm-gold:    #b8860b;
+    --adm-white:   #ffffff;
+    --adm-bg:      #e8e8e8;
+    --adm-border:  #aaaaaa;
+    --adm-border2: #cccccc;
+    --adm-text:    #222222;
+    --adm-label:   #333333;
+    --adm-muted:   #666666;
+    --adm-row-alt: #f5f0e0;
+    --adm-active:  #dff0d8;
+  }
+  .admin-panel {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 9000;
+    background: var(--adm-bg); color: var(--adm-text);
+    font-family: Arial, Helvetica, sans-serif; font-size: 12px;
+    box-shadow: 0 -3px 12px rgba(0,0,0,0.30);
+    border-top: 3px solid var(--adm-green);
+    transition: height 0.2s ease; height: 390px;
+    display: flex; flex-direction: column;
+  }
+  .admin-panel.collapsed { height: 34px; overflow: hidden; }
+  .admin-topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 14px; height: 34px; flex-shrink: 0;
+    background: var(--adm-green); cursor: default;
+  }
+  .admin-badge { color: #fff; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+  .admin-badge .bh-mark { background: #cc0000; color: #fff; font-size: 10px; font-weight: 900; padding: 1px 5px; border-radius: 2px; letter-spacing: -0.5px; }
+  .admin-topbar-title { font-size: 11px; color: #d0dfc8; }
+  .admin-topbar-links { display: flex; align-items: center; gap: 16px; margin-left: 12px; }
+  .admin-topbar-links a { color: #d0dfc8; font-size: 11px; text-decoration: underline; cursor: pointer; }
+  .admin-topbar-links a:hover { color: #fff; }
+  .admin-collapse-btn {
+    margin-left: auto; background: none; border: 1px solid #6a8a62; color: #c0d0b8;
+    border-radius: 2px; width: 20px; height: 18px; cursor: pointer; font-size: 10px;
+    display: flex; align-items: center; justify-content: center; transition: background 0.1s;
+  }
+  .admin-collapse-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .admin-search-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; height: 38px; flex-shrink: 0;
+    background: var(--adm-cream); border-bottom: 2px solid var(--adm-green2);
+  }
+  .admin-search-label { font-size: 12px; font-weight: bold; color: var(--adm-label); white-space: nowrap; }
+  .admin-catid-input {
+    width: 110px; background: #fff; border: 1px solid var(--adm-border);
+    color: var(--adm-text); font-family: Arial, sans-serif; font-size: 12px;
+    padding: 3px 6px; outline: none;
+  }
+  .admin-catid-input:focus { border-color: var(--adm-green2); outline: 1px solid var(--adm-green2); }
+
+  /* ── Typeahead dropdown ── */
+  .admin-typeahead-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .admin-typeahead-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 0;
+    min-width: 280px;
+    background: #fff;
+    border: 1px solid var(--adm-border);
+    border-top: 2px solid var(--adm-green2);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+    z-index: 99999;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .admin-typeahead-dropdown.open { display: block; }
+  .typeahead-item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--adm-border2);
+    transition: background 0.08s;
+  }
+  .typeahead-item:last-child { border-bottom: none; }
+  .typeahead-item:hover,
+  .typeahead-item.focused { background: var(--adm-active); }
+  .typeahead-item-name {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--adm-text);
+    flex: 1;
+  }
+  .typeahead-item-name mark {
+    background: #fff3a0;
+    color: var(--adm-text);
+    font-weight: bold;
+    border-radius: 1px;
+    padding: 0 1px;
+  }
+  .typeahead-item-id {
+    font-size: 11px;
+    color: var(--adm-muted);
+    white-space: nowrap;
+  }
+  .typeahead-item-id mark {
+    background: #fff3a0;
+    color: var(--adm-muted);
+    font-weight: bold;
+    border-radius: 1px;
+    padding: 0 1px;
+  }
+  .typeahead-empty {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--adm-muted);
+    font-style: italic;
+  }
+  .admin-load-btn {
+    background: #fff; color: var(--adm-text); border: 1px solid var(--adm-border);
+    padding: 3px 12px; font-size: 12px; cursor: pointer; transition: background 0.1s;
+  }
+  .admin-load-btn:hover { background: var(--adm-cream2); }
+  .admin-error { font-size: 11px; color: var(--adm-red); font-weight: bold; margin-left: 6px; }
+  .admin-hint  { font-size: 11px; color: #2a6a2a; font-weight: bold; margin-left: 6px; }
+  .admin-detail { flex: 1; display: none; overflow: hidden; background: var(--adm-bg); }
+  .admin-detail.visible { display: flex; }
+  .admin-slots-pane {
+    width: 220px; flex-shrink: 0; border-right: 1px solid var(--adm-border2);
+    display: flex; flex-direction: column; overflow: hidden; background: #fff;
+  }
+  .admin-slots-header {
+    padding: 6px 12px 5px; background: var(--adm-cream); border-bottom: 1px solid var(--adm-border);
+  }
+  .admin-cat-name { font-size: 13px; font-weight: bold; color: var(--adm-red); display: block; line-height: 1.3; }
+  .admin-cat-id-badge { font-size: 10px; color: var(--adm-muted); display: inline-block; margin-top: 1px; }
+  .admin-feat-label { font-size: 10px; font-weight: bold; color: var(--adm-green2); margin-top: 4px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+  .admin-slots-list { flex: 1; overflow-y: auto; }
+  .admin-slot-row {
+    display: flex; align-items: center; padding: 4px 10px;
+    border-bottom: 1px solid var(--adm-border2); cursor: pointer;
+    min-height: 30px; background: #fff; transition: background 0.08s;
+    position: relative;
+  }
+  .admin-slot-row:nth-child(even) { background: var(--adm-row-alt); }
+  .admin-slot-row:hover { background: #e8f0e0; }
+  .admin-slot-row.active { background: var(--adm-active) !important; border-left: 3px solid var(--adm-green2); padding-left: 7px; }
+  .admin-slot-row.dragging { opacity: 0.35; background: #f0f0f0 !important; }
+  .admin-slot-row.drag-over::before {
+    content: ''; position: absolute; top: -1px; left: 0; right: 0;
+    height: 2px; background: var(--adm-green2); pointer-events: none; z-index: 10;
+  }
+  .drag-handle {
+    color: #bbb; font-size: 14px; cursor: grab; flex-shrink: 0;
+    margin-right: 6px; line-height: 1; padding: 2px 0;
+    user-select: none; letter-spacing: -1px;
+  }
+  .drag-handle:active { cursor: grabbing; }
+  .admin-slot-row-num { font-size: 11px; font-weight: bold; color: var(--adm-label); width: 46px; flex-shrink: 0; }
+  .admin-slot-row-label { flex: 1; font-size: 11px; color: var(--adm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .admin-slot-row-label.empty { color: var(--adm-muted); font-style: italic; }
+  .admin-slot-row-type { font-size: 9px; color: var(--adm-muted); background: #e0e0e0; border-radius: 2px; padding: 1px 5px; flex-shrink: 0; margin-left: 4px; text-transform: uppercase; }
+  .admin-slot-row-remove { background: none; border: none; color: #993333; cursor: pointer; font-size: 12px; padding: 0 0 0 6px; line-height: 1; flex-shrink: 0; }
+  .admin-slot-row-remove:hover { color: var(--adm-red); }
+  .admin-add-label { font-size: 10px; color: var(--adm-gold); font-weight: bold; margin-left: auto; flex-shrink: 0; text-decoration: underline; cursor: pointer; }
+  .admin-editor-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
+  .admin-editor-empty { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: var(--adm-muted); }
+  .admin-editor-empty svg { width: 28px; height: 28px; opacity: 0.2; }
+  .admin-editor-empty span { font-size: 12px; color: var(--adm-muted); }
+  .admin-editor-form { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+  .admin-editor-form.visible { display: flex; }
+  .admin-editor-form-header {
+    padding: 6px 14px; background: #fff;
+    border-bottom: 1px solid var(--adm-border2);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .admin-editor-form-title { font-size: 14px; font-weight: bold; color: var(--adm-red); }
+  .admin-editor-form-subtitle { font-size: 11px; color: var(--adm-muted); }
+  .adm-action-btn {
+    background: #fff; color: var(--adm-text); border: 1px solid var(--adm-border);
+    padding: 3px 14px; font-size: 12px; cursor: pointer; transition: background 0.1s;
+  }
+  .adm-action-btn:hover { background: var(--adm-cream2); }
+  .adm-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .adm-action-btn.primary { font-weight: bold; }
+  .admin-editor-form-body { flex: 1; padding: 12px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fff; }
+  .admin-field { display: flex; flex-direction: column; gap: 3px; }
+  .admin-field label { font-size: 12px; font-weight: bold; color: var(--adm-label); }
+  .admin-field select, .admin-field input[type="text"], .admin-field input[type="url"] {
+    background: #fff; border: 1px solid var(--adm-border); color: var(--adm-text);
+    font-family: Arial, sans-serif; font-size: 12px; padding: 4px 6px; outline: none;
+    width: 100%; max-width: 400px;
+  }
+  .admin-field select:focus, .admin-field input:focus { border-color: var(--adm-green2); outline: 1px solid var(--adm-green2); }
+  .admin-field select { cursor: pointer; }
+  .admin-label-list { background: #fff; border: 1px solid var(--adm-border); max-height: 170px; overflow-y: auto; max-width: 400px; }
+  .admin-label-item {
+    padding: 5px 10px; font-size: 12px; color: var(--adm-text); cursor: pointer;
+    border-bottom: 1px solid var(--adm-border2);
+    display: flex; align-items: center; justify-content: space-between; transition: background 0.08s;
+  }
+  .admin-label-item:nth-child(even) { background: var(--adm-row-alt); }
+  .admin-label-item:hover { background: #e8f0e0; }
+  .admin-label-item.selected { background: var(--adm-active); font-weight: bold; color: var(--adm-green2); }
+  .admin-label-item:last-child { border-bottom: none; }
+  .admin-label-item .label-check { color: var(--adm-green2); font-size: 13px; }
+  .admin-catid-result {
+    background: #f0fff0; border: 1px solid #88aa88;
+    padding: 5px 10px; font-size: 12px; color: #2a6a2a; display: none; max-width: 400px;
+  }
+  .admin-catid-result.visible { display: block; }
+  .admin-catid-result.error { background: #fff0f0; border-color: #cc8888; color: var(--adm-red); }
+  .admin-catid-search-row { display: flex; gap: 6px; align-items: center; max-width: 400px; }
+  .admin-catid-search-row input { flex: 1; }
+  .admin-search-btn {
+    background: #fff; color: var(--adm-text); border: 1px solid var(--adm-border);
+    padding: 4px 14px; font-size: 12px; cursor: pointer; white-space: nowrap; transition: background 0.1s;
+  }
+  .admin-search-btn:hover { background: var(--adm-cream2); }
+  .admin-editor-form-footer {
+    padding: 6px 16px; border-top: 1px solid var(--adm-border2); background: var(--adm-cream);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .admin-save-btn {
+    background: #fff; color: var(--adm-text); border: 1px solid var(--adm-border);
+    padding: 4px 16px; font-size: 12px; font-weight: bold; cursor: pointer; transition: background 0.1s;
+  }
+  .admin-save-btn:hover { background: var(--adm-cream2); }
+  .admin-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .admin-cancel-btn {
+    background: #fff; color: var(--adm-text); border: 1px solid var(--adm-border);
+    padding: 4px 14px; font-size: 12px; cursor: pointer; transition: background 0.1s;
+  }
+  .admin-cancel-btn:hover { background: var(--adm-cream2); }
+  .admin-save-status { font-size: 11px; color: #2a6a2a; font-weight: bold; margin-left: 4px; }
+
+
+</style>
+</head>
+<body>
+
+<!-- UTILITY BAR -->
+<div class="utility-bar">
+  <a href="#">B2B, Gov, Students &amp; More ▾</a>
+  <span class="separator">|</span>
+  <a href="#">📖 News, Tips &amp; Reviews</a>
+  <span class="separator">|</span>
+  <a href="#">🎁 B&amp;H Gift Cards</a>
+  <span class="tagline">The Professional's Source Since 1973</span>
+  <span class="separator">|</span>
+  <a href="#">🏬 NYC SuperStore</a>
+  <span class="separator">|</span>
+  <a href="#">About Us</a>
+  <span class="separator">|</span>
+  <a href="#">Help</a>
+  <span class="separator">|</span>
+  <a href="#">Live Chat</a>
+</div>
+
+<!-- MAIN HEADER -->
+<div class="main-header">
+  <a class="logo" href="#">
+    <div class="logo-box">B&H</div>
+    <div class="logo-sub">Photo<br>Video · Audio</div>
+  </a>
+
+  <div class="expert-box">
+    <span class="expert-icon">👤</span>
+    <div class="expert-text">Ask our Experts<strong>800.606.6969</strong></div>
+  </div>
+
+  <div class="search-wrap">
+    <input type="text" placeholder="Search">
+    <button>🔍</button>
+  </div>
+
+  <div class="header-actions">
+    <div class="header-action">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <span>The B&amp;H<br>Payboo Card</span>
+    </div>
+    <div class="header-action">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>
+      <span>Ends In <span class="deal-timer">11:53:23</span><br>Deal Zone</span>
+    </div>
+    <div class="header-action">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span>Hello, Log In<br>Account &amp; Orders</span>
+    </div>
+    <div class="header-action">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span>My Cart</span>
+    </div>
+  </div>
+</div>
+
+<!-- GREEN NAV BAR -->
+<div class="nav-bar" id="navBar">
+
+  <div class="nav-item" data-menu="photography">
+    <a class="nav-link" href="#">Photography</a>
+  </div>
+  <div class="nav-item" data-menu="computers">
+    <a class="nav-link" href="#">Computers</a>
+  </div>
+  <div class="nav-item" data-menu="provideo">
+    <a class="nav-link" href="#">Pro Video</a>
+  </div>
+  <div class="nav-item" data-menu="lighting">
+    <a class="nav-link" href="#">Lighting</a>
+  </div>
+  <div class="nav-item" data-menu="proaudio">
+    <a class="nav-link" href="#">Pro Audio</a>
+  </div>
+  <div class="nav-item" data-menu="drones">
+    <a class="nav-link" href="#">Drones</a>
+  </div>
+  <div class="nav-item" data-menu="camcorders">
+    <a class="nav-link" href="#">Camcorders</a>
+  </div>
+  <div class="nav-item" data-menu="tv">
+    <a class="nav-link" href="#">TVs &amp; Entertainment</a>
+  </div>
+  <div class="nav-item" data-menu="av">
+    <a class="nav-link" href="#">Audio-Visual</a>
+  </div>
+  <div class="nav-item" data-menu="optics">
+    <a class="nav-link" href="#">Optics</a>
+  </div>
+  <div class="nav-item" data-menu="mobile">
+    <a class="nav-link" href="#">Mobile</a>
+  </div>
+  <div class="nav-item" data-menu="surveillance">
+    <a class="nav-link" href="#">Surveillance</a>
+  </div>
+  <div class="nav-item" data-menu="more">
+    <a class="nav-link" href="#">More… ▾</a>
+  </div>
+  <div class="nav-item" data-menu="used">
+    <a class="nav-link used" href="#">Used</a>
+  </div>
+  <div class="nav-item" data-menu="specials">
+    <a class="nav-link specials" href="#">Specials</a>
+  </div>
+
+  <!-- MEGA MENU (shared, repositioned via JS) -->
+  <div class="mega-overlay" id="megaOverlay">
+    <div class="mega-menu" id="megaMenu">
+
+      <!-- Col 1: primary categories -->
+      <div class="col-categories" id="colCategories">
+        <div class="col-heading" id="colHeading">All Pro Video</div>
+        <!-- items injected by JS -->
+      </div>
+
+      <!-- Col 2: sub-categories -->
+      <div class="col-sub" id="colSub">
+        <div class="col-heading" id="colSubHeading">All Recorders &amp; Duplication</div>
+      </div>
+
+      <!-- Col 3: tertiary -->
+      <div class="col-tertiary" id="colTertiary">
+        <div class="col-heading" id="colTertiaryHeading">Sub-category</div>
+      </div>
+
+      <!-- Col right: contextual links -->
+      <div class="col-contextual" id="colContextual"></div>
+
+      <!-- White space filler -->
+      <div class="col-spacer"></div>
+
+    </div>
+  </div>
+</div>
+
+<div class="mega-backdrop" id="megaBackdrop"></div>
+
+<!-- PAGE CONTENT -->
+<div class="page-body">
+  <h2>Navigation Prototype – B&amp;H Style</h2>
+  <p>Hover any green category above to open the mega menu. Use the <strong>Admin Panel</strong> below to manage featured slots per category — featured items appear first in the mega menu with a green badge.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ADMIN PANEL
+══════════════════════════════════════════════════════════ -->
+<div class="admin-panel" id="adminPanel">
+
+  <!-- Top bar (dark green) -->
+  <div class="admin-topbar">
+    <span class="admin-badge">
+      <span class="bh-mark">B&H</span>
+      Category Admin
+    </span>
+    <span class="admin-topbar-title">| Mega Menu Manager</span>
+    <div class="admin-topbar-links">
+      <a href="#">Item Navigation ▾</a>
+      <a href="data-management.html" style="color:#ffe066;font-weight:bold;">Data Management ▾</a>
+      <a href="#">Admin ▾</a>
+      <a id="adminDetailLink" href="category-detail.html" target="_blank" style="color:#ffe066;font-weight:bold;">Open Category Detail ↗</a>
+    </div>
+    <button class="admin-collapse-btn" id="adminCollapseBtn" title="Toggle panel">▼</button>
+  </div>
+
+  <!-- Search row -->
+  <div class="admin-search-row">
+    <span class="admin-search-label">Category ID:</span>
+    <div class="admin-typeahead-wrap">
+      <input class="admin-catid-input" id="adminCatInput" type="text"
+             placeholder="ID or name…" maxlength="30" autocomplete="off" />
+      <div class="admin-typeahead-dropdown" id="adminTypeaheadDropdown" role="listbox"></div>
+    </div>
+    <button class="admin-load-btn" id="adminLoadBtn">Load →</button>
+    <span id="adminMsg"></span>
+  </div>
+
+  <!-- Category detail: two-pane -->
+  <div class="admin-detail" id="adminDetail">
+
+    <!-- LEFT: slot list -->
+    <div class="admin-slots-pane">
+      <div class="admin-slots-header">
+        <span class="admin-cat-name" id="adminCatName"></span>
+        <span class="admin-cat-id-badge" id="adminCatIdBadge"></span>
+        <span class="admin-feat-label">★ Featured Slots</span>
+      </div>
+      <div class="admin-slots-list" id="adminSlots"></div>
+    </div>
+
+    <!-- RIGHT: editor pane -->
+    <div class="admin-editor-pane" id="adminEditorPane">
+
+      <!-- empty state -->
+      <div class="admin-editor-empty" id="adminEditorEmpty">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>Click a slot to edit or add an item</span>
+      </div>
+
+      <!-- form -->
+      <div class="admin-editor-form" id="adminEditorForm">
+        <div class="admin-editor-form-header">
+          <div class="admin-editor-form-title" id="adminFormTitle">Slot 1</div>
+          <div class="admin-editor-form-subtitle" id="adminFormSubtitle"></div>
+        </div>
+
+        <div class="admin-editor-form-body">
+
+          <!-- Type selector -->
+          <div class="admin-field">
+            <label>Type</label>
+            <select id="adminTypeSelect">
+              <option value="">— Select type —</option>
+              <option value="label">Label</option>
+              <option value="url">Custom URL</option>
+              <option value="catid">CatID</option>
+            </select>
+          </div>
+
+          <!-- LABEL fields -->
+          <div id="fieldLabel" style="display:none">
+            <div class="admin-label-list" id="adminLabelList"></div>
+          </div>
+
+          <!-- CUSTOM URL fields -->
+          <div id="fieldUrl" style="display:none; display:none; gap:14px; flex-direction:column;">
+            <div class="admin-field">
+              <label>Custom URL</label>
+              <input type="url" id="adminUrlInput" placeholder="https://www.bhphotovideo.com/…" />
+            </div>
+            <div class="admin-field">
+              <label>Label</label>
+              <input type="text" id="adminUrlLabel" placeholder="Display text in mega menu" />
+            </div>
+          </div>
+
+          <!-- CATID fields -->
+          <div id="fieldCatId" style="display:none">
+            <div class="admin-field">
+              <label>CatID</label>
+              <div class="admin-catid-search-row">
+                <input type="text" id="adminCatIdField" placeholder="e.g. 3755" />
+                <button class="admin-search-btn" id="adminCatIdSearchBtn">Search</button>
+              </div>
+            </div>
+            <div class="admin-catid-result" id="adminCatIdResult"></div>
+          </div>
+
+        </div><!-- /form-body -->
+
+        <div class="admin-editor-form-footer">
+          <button class="admin-save-btn" id="adminSaveBtn" disabled>Save to Slot</button>
+          <button class="admin-cancel-btn" id="adminCancelBtn">Cancel</button>
+          <span class="admin-save-status" id="adminSaveStatus"></span>
+        </div>
+      </div><!-- /form -->
+
+    </div><!-- /editor-pane -->
+  </div><!-- /detail -->
+
+</div><!-- /admin-panel -->
+
+<script>
+// ─── CATID → MENU KEY MAP ────────────────────────────────────────────────────
+
+const CATID_MAP = {
+  '989':   'photography',
+  '9581':  'computers',
+  '3755':  'provideo',
+  '1161':  'lighting',
+  '12154': 'proaudio',
+  '27989': 'drones',
+  '1820':  'camcorders',
+  '4600':  'tv',
+  '3644':  'av',
+  '978':   'optics',
+  '8565':  'mobile',
+  '3496':  'surveillance',
+  '47088': 'more',
+  '2870':  'used',
+};
+
+// ─── FEATURED STATE ───────────────────────────────────────────────────────────
+// featuredItems[menuKey] = [null, null, null, null, null]  (5 slots, null = empty)
+
+const featuredItems = {};
+Object.values(CATID_MAP).forEach(k => {
+  featuredItems[k] = Array(10).fill(null);
+});
+featuredItems['specials'] = Array(10).fill(null);
+
+// Sync with localStorage (shared with category-detail.html)
+function syncToStorage() {
+  try { localStorage.setItem('bh_featured', JSON.stringify(featuredItems)); } catch {}
+}
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem('bh_featured');
+    if (!raw) return;
+    const stored = JSON.parse(raw);
+    Object.keys(stored).forEach(k => {
+      if (featuredItems[k]) featuredItems[k] = stored[k];
+    });
+  } catch {}
+}
+loadFromStorage();
+
+
+const CONTEXTUAL = {
+  default: [
+    { icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`, label: 'Specials in Category' },
+    { icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`, label: 'Used Items' },
+    { icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`, label: 'New Arrivals' },
+    null,
+    { icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`, label: 'Find The Perfect Video Cable' },
+    { icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`, label: 'Buying Guide' },
+    null,
+    { icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`, label: 'Talk to an Expert – live!', expert: true },
+  ]
+};
+
+const MENUS = {
+  photography: {
+    heading: 'All Photography',
+    categories: [
+      { label: 'Digital Cameras', children: [
+        { label: 'DSLRs' }, { label: 'Mirrorless' }, { label: 'Medium Format' }, { label: 'Point & Shoot' }, { label: 'Film Cameras' }
+      ]},
+      { label: 'Lenses', children: [
+        { label: 'DSLR & Mirrorless Lenses' }, { label: 'Cinema Lenses' }, { label: 'Lens Adapters' }
+      ]},
+      { label: 'Photo Tripods & Support' },
+      { label: 'Photography Bags & Cases' },
+      { label: 'Memory Cards & Accessories' },
+      { label: 'Batteries & Power Accessories' },
+      { label: 'Flashes & On Camera Lighting' },
+      { label: 'Lens Filters' },
+      { label: 'Lens Accessories' },
+      { label: 'Photo Accessories' },
+      null,
+      { label: 'Lighting & Studio' },
+      { label: 'Underwater Photography' },
+      { label: 'Darkroom Equipment' },
+      { label: 'Books & Tutorials' },
+      { label: 'Photo Software' },
+      null,
+      { label: 'Scanners' },
+      { label: 'Photo Printers' },
+      { label: 'Presentation & Archiving' },
+    ]
+  },
+  computers: {
+    heading: 'All Computers',
+    categories: [
+      { label: 'Laptops', children: [
+        { label: 'Windows Laptops' }, { label: 'MacBooks' }, { label: 'Chromebooks' }, { label: 'Gaming Laptops' }
+      ]},
+      { label: 'Desktops', children: [
+        { label: 'iMacs' }, { label: 'Windows Desktops' }, { label: 'Mac Pro & Mac Studio' }, { label: 'Mini PCs' }
+      ]},
+      { label: 'Tablets' },
+      { label: 'Monitors' },
+      null,
+      { label: 'Hard Drives & Storage' },
+      { label: 'Networking' },
+      { label: 'Printers & Scanners' },
+      { label: 'Keyboards & Mice' },
+      { label: 'Computer Accessories' },
+    ]
+  },
+  provideo: {
+    heading: 'All Pro Video',
+    categories: [
+      { label: 'Shop Podcasting' },
+      { label: 'Digital Cinema Cameras' },
+      { label: 'Camcorders' },
+      { label: 'PTZ' },
+      { label: 'Studio & EFP Cameras' },
+      { label: 'Lenses & Lens Accessories' },
+      null,
+      { label: 'Video Tripods, Supports & Rigs' },
+      { label: 'Batteries & Power' },
+      { label: 'Professional Video Cases' },
+      { label: 'Studio & EFP Equipment' },
+      { label: 'Camcorder & Camera Peripherals' },
+      { label: 'Production Switchers & Controllers' },
+      { label: 'Monitors' },
+      { label: 'Recorders & Duplication', children: [
+        { label: 'All Recorders & Duplication' },
+        null,
+        { label: 'Recording Monitors' },
+        { label: 'Portable Video Recorders' },
+        { label: 'Studio Video Recorders & Players' },
+        { label: 'Solid State Recorder Accessories', children: [
+          { label: 'Solid State Recorder Accessories' },
+          { label: 'Mounting Brackets' },
+          { label: 'Battery Mounting Plates' },
+          { label: 'Power Adapter Cables' },
+          { label: 'Video Recording Media' },
+          { label: 'Video Recording Media Accessories' },
+        ]},
+        { label: 'VTR Accessories' },
+        { label: 'CD/DVD Duplication' },
+      ]},
+      { label: 'Post Production' },
+      { label: 'Lighting' },
+      { label: 'Tapes & Digital Media' },
+    ]
+  },
+  lighting: {
+    heading: 'All Lighting',
+    categories: [
+      { label: 'LED Lights', children: [{ label: 'On-Camera LED' }, { label: 'Panel Lights' }, { label: 'Tube Lights' }, { label: 'Fresnel LED' }] },
+      { label: 'Tungsten Lights' },
+      { label: 'HMI Lights' },
+      { label: 'Fluorescent Lights' },
+      null,
+      { label: 'Light Stands & Supports' },
+      { label: 'Modifiers & Diffusers' },
+      { label: 'Grip & Rigging' },
+      { label: 'Reflectors & Flags' },
+      { label: 'Lighting Kits' },
+    ]
+  },
+  proaudio: {
+    heading: 'All Pro Audio',
+    categories: [
+      { label: 'Microphones', children: [{ label: 'Condenser Mics' }, { label: 'Dynamic Mics' }, { label: 'Ribbon Mics' }, { label: 'Shotgun Mics' }, { label: 'Lavalier Mics' }] },
+      { label: 'Headphones & Monitoring' },
+      { label: 'Mixers & Interfaces' },
+      { label: 'Recorders' },
+      null,
+      { label: 'Studio Monitors' },
+      { label: 'Signal Processing' },
+      { label: 'Cables & Connectors' },
+      { label: 'PA Systems' },
+      { label: 'Live Sound' },
+    ]
+  },
+  drones: {
+    heading: 'All Drones',
+    categories: [
+      { label: 'DJI Drones', children: [{ label: 'DJI Mavic' }, { label: 'DJI Air' }, { label: 'DJI Mini' }, { label: 'DJI Phantom' }] },
+      { label: 'Autel Drones' },
+      { label: 'FPV Drones' },
+      { label: 'Enterprise Drones' },
+      null,
+      { label: 'Drone Accessories' },
+      { label: 'Batteries & Chargers' },
+      { label: 'Cases & Bags' },
+      { label: 'Propellers' },
+    ]
+  },
+  camcorders: {
+    heading: 'All Camcorders',
+    categories: [
+      { label: 'Consumer Camcorders' },
+      { label: 'Professional Camcorders' },
+      { label: 'Action Cameras', children: [{ label: 'GoPro' }, { label: 'DJI Action' }, { label: 'Insta360' }] },
+      null,
+      { label: 'Accessories' },
+      { label: 'Batteries & Power' },
+      { label: 'Memory & Storage' },
+    ]
+  },
+  tv: {
+    heading: 'All TVs & Entertainment',
+    categories: [
+      { label: 'Televisions', children: [{ label: 'OLED TVs' }, { label: 'QLED TVs' }, { label: 'LED TVs' }, { label: '8K TVs' }, { label: 'Outdoor TVs' }] },
+      { label: 'Projectors & Screens' },
+      { label: 'Streaming Devices' },
+      { label: 'Blu-ray & DVD Players' },
+      null,
+      { label: 'Home Theater Audio' },
+      { label: 'Soundbars' },
+      { label: 'TV Mounts & Stands' },
+      { label: 'HDMI Cables & Adapters' },
+    ]
+  },
+  av: {
+    heading: 'All Audio-Visual',
+    categories: [
+      { label: 'Presentation & Collaboration' },
+      { label: 'Projectors', children: [{ label: 'Short Throw' }, { label: 'Long Throw' }, { label: 'Laser Projectors' }] },
+      { label: 'Displays & Signage' },
+      { label: 'Switchers & Extenders' },
+      null,
+      { label: 'Conferencing Systems' },
+      { label: 'AV Cables & Connectivity' },
+      { label: 'Mounts & Racks' },
+    ]
+  },
+  optics: {
+    heading: 'All Optics',
+    categories: [
+      { label: 'Binoculars' },
+      { label: 'Telescopes' },
+      { label: 'Spotting Scopes' },
+      { label: 'Rangefinders' },
+      null,
+      { label: 'Microscopes' },
+      { label: 'Night Vision' },
+      { label: 'Monoculars' },
+      { label: 'Eyewear & Accessories' },
+    ]
+  },
+  mobile: {
+    heading: 'All Mobile',
+    categories: [
+      { label: 'Smartphones' },
+      { label: 'Tablets' },
+      { label: 'Smartwatches' },
+      null,
+      { label: 'Phone Cases & Protection' },
+      { label: 'Mobile Lenses & Accessories' },
+      { label: 'Chargers & Power Banks' },
+      { label: 'Bluetooth & Wireless Audio' },
+    ]
+  },
+  surveillance: {
+    heading: 'All Surveillance',
+    categories: [
+      { label: 'IP & Network Cameras', children: [{ label: 'Dome Cameras' }, { label: 'Bullet Cameras' }, { label: 'PTZ Cameras' }] },
+      { label: 'NVRs & DVRs' },
+      { label: 'Video Management Software' },
+      null,
+      { label: 'Outdoor Cameras' },
+      { label: 'Indoor Cameras' },
+      { label: 'Access Control' },
+      { label: 'Intercoms' },
+    ]
+  },
+  used: {
+    heading: 'Used Equipment',
+    categories: [
+      { label: 'Used Photography' },
+      { label: 'Used Pro Video' },
+      { label: 'Used Computers' },
+      { label: 'Used Audio' },
+      null,
+      { label: 'Used TVs' },
+      { label: 'Used Optics' },
+    ]
+  },
+  specials: {
+    heading: 'Current Specials',
+    categories: [
+      { label: 'Deal Zone' },
+      { label: 'Weekly Specials' },
+      { label: 'Instant Savings' },
+      { label: 'Refurbished Items' },
+      null,
+      { label: 'Clearance' },
+      { label: 'Open Box' },
+    ]
+  },
+  more: {
+    heading: 'More Categories',
+    categories: [
+      { label: 'Musical Instruments' },
+      { label: 'Home & Garden' },
+      { label: 'Sports & Outdoors' },
+      { label: 'Automotive' },
+    ]
+  }
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+let activeMenu = null;
+let activeL1 = null;
+let activeL2 = null;
+let closeTimer = null;
+
+// ─── DOM REFS ────────────────────────────────────────────────────────────────
+
+const navBar = document.getElementById('navBar');
+const megaOverlay = document.getElementById('megaOverlay');
+const megaMenu = document.getElementById('megaMenu');
+const colCategories = document.getElementById('colCategories');
+const colHeading = document.getElementById('colHeading');
+const colSub = document.getElementById('colSub');
+const colSubHeading = document.getElementById('colSubHeading');
+const colTertiary = document.getElementById('colTertiary');
+const colTertiaryHeading = document.getElementById('colTertiaryHeading');
+const colContextual = document.getElementById('colContextual');
+const backdrop = document.getElementById('megaBackdrop');
+
+// ─── CONTEXTUAL LINKS ────────────────────────────────────────────────────────
+
+function buildContextual(menuKey) {
+  const items = CONTEXTUAL.default;
+  colContextual.innerHTML = '';
+  items.forEach(item => {
+    if (!item) {
+      const d = document.createElement('div');
+      d.className = 'ctx-divider';
+      colContextual.appendChild(d);
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = '#';
+    a.className = item.expert ? 'ctx-expert' : 'ctx-link';
+    a.innerHTML = `<span class="ctx-icon">${item.icon}</span><span>${item.label}</span>`;
+    colContextual.appendChild(a);
+  });
+}
+
+// ─── RENDER LEVEL-1 ──────────────────────────────────────────────────────────
+
+function renderL1(menuKey) {
+  const data = MENUS[menuKey];
+  if (!data) return;
+
+  // "All [Category]" heading is already the col-heading element
+  colHeading.textContent = data.heading;
+
+  // Clear everything except the heading
+  Array.from(colCategories.children).forEach(c => {
+    if (!c.classList.contains('col-heading')) c.remove();
+  });
+
+  // ── SECTION 1: Featured (filled slots) ──────────────────────
+  const featured = (featuredItems[menuKey] || []).filter(Boolean);
+  if (featured.length > 0) {
+    const lbl = document.createElement('div');
+    lbl.className = 'feat-section-label';
+    lbl.textContent = '★ Featured';
+    colCategories.appendChild(lbl);
+
+    featured.forEach(feat => {
+      const el = document.createElement('a');
+      el.href = feat.type === 'url' ? feat.url : '#';
+      el.className = 'cat-item featured-item' + (feat.children ? ' has-children' : '');
+      el.innerHTML = `<span>${feat.label}<span class="feat-star">FEATURED</span></span>${feat.children ? '<span class="chevron">▶</span>' : ''}`;
+      el.addEventListener('mouseenter', () => {
+        Array.from(colCategories.querySelectorAll('.cat-item')).forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        if (feat.children) renderL2(feat);
+        else { colSub.classList.remove('visible'); colTertiary.classList.remove('visible'); }
+      });
+      colCategories.appendChild(el);
+    });
+
+    const sep = document.createElement('div');
+    sep.className = 'feat-section-end';
+    colCategories.appendChild(sep);
+  }
+
+  // ── SECTION 2: Rest of categories ───────────────────────────
+  // Skip any category whose label is already in featured
+  const featuredLabels = new Set(featured.map(f => f.label));
+
+  data.categories.forEach((cat, i) => {
+    if (!cat) {
+      const d = document.createElement('div');
+      d.className = 'cat-divider';
+      colCategories.appendChild(d);
+      return;
+    }
+    // Dim (don't hide) items already featured so admin can see all items
+    const el = document.createElement('a');
+    el.href = '#';
+    el.className = 'cat-item' + (cat.children ? ' has-children' : '');
+    if (featuredLabels.has(cat.label)) el.style.opacity = '0.4';
+    el.dataset.index = i;
+    el.innerHTML = `<span>${cat.label}</span>${cat.children ? '<span class="chevron">▶</span>' : ''}`;
+    el.addEventListener('mouseenter', () => {
+      Array.from(colCategories.querySelectorAll('.cat-item')).forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      activeL1 = i;
+      if (cat.children) renderL2(cat);
+      else { colSub.classList.remove('visible'); colTertiary.classList.remove('visible'); activeL2 = null; }
+    });
+    colCategories.appendChild(el);
+  });
+
+  buildContextual(menuKey);
+}
+
+// ─── RENDER LEVEL-2 ──────────────────────────────────────────────────────────
+
+function renderL2(cat) {
+  colSubHeading.textContent = 'All ' + cat.label;
+  colTertiary.classList.remove('visible');
+
+  // Remove old items
+  Array.from(colSub.children).forEach(c => { if (!c.classList.contains('col-heading')) c.remove(); });
+
+  cat.children.forEach((sub, i) => {
+    if (!sub) {
+      const d = document.createElement('div');
+      d.className = 'cat-divider';
+      colSub.appendChild(d);
+      return;
+    }
+    const el = document.createElement('a');
+    el.href = '#';
+    el.className = 'sub-item' + (sub.children ? ' has-children' : '');
+    el.innerHTML = `<span>${sub.label}</span>${sub.children ? '<span class="chevron">▶</span>' : ''}`;
+
+    el.addEventListener('mouseenter', () => {
+      Array.from(colSub.querySelectorAll('.sub-item')).forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      activeL2 = i;
+
+      if (sub.children) {
+        renderL3(sub);
+      } else {
+        colTertiary.classList.remove('visible');
+      }
+    });
+    colSub.appendChild(el);
+  });
+
+  colSub.classList.add('visible');
+}
+
+// ─── RENDER LEVEL-3 ──────────────────────────────────────────────────────────
+
+function renderL3(sub) {
+  colTertiaryHeading.textContent = 'All ' + sub.label;
+
+  Array.from(colTertiary.children).forEach(c => { if (!c.classList.contains('col-heading')) c.remove(); });
+
+  sub.children.forEach(item => {
+    if (!item) {
+      const d = document.createElement('div');
+      d.className = 'cat-divider';
+      colTertiary.appendChild(d);
+      return;
+    }
+    const el = document.createElement('a');
+    el.href = '#';
+    el.className = 'sub-item';
+    el.innerHTML = `<span>${item.label}</span>`;
+    el.addEventListener('mouseenter', () => {
+      Array.from(colTertiary.querySelectorAll('.sub-item')).forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+    });
+    colTertiary.appendChild(el);
+  });
+
+  colTertiary.classList.add('visible');
+}
+
+// ─── OPEN / CLOSE ─────────────────────────────────────────────────────────────
+
+function openMenu(menuKey, navItem) {
+  clearTimeout(closeTimer);
+
+  if (activeMenu === menuKey) return;
+  activeMenu = menuKey;
+
+  // Deactivate all nav items
+  Array.from(navBar.querySelectorAll('.nav-item')).forEach(n => n.classList.remove('active'));
+  navItem.classList.add('active');
+
+  activeL1 = null;
+  activeL2 = null;
+
+  colSub.classList.remove('visible');
+  colTertiary.classList.remove('visible');
+
+  renderL1(menuKey);
+}
+
+function scheduleClose() {
+  clearTimeout(closeTimer);
+  closeTimer = setTimeout(closeMenu, 180);
+}
+
+function closeMenu() {
+  activeMenu = null;
+  Array.from(navBar.querySelectorAll('.nav-item')).forEach(n => n.classList.remove('active'));
+  colSub.classList.remove('visible');
+  colTertiary.classList.remove('visible');
+}
+
+// ─── EVENT BINDINGS ───────────────────────────────────────────────────────────
+
+navBar.querySelectorAll('.nav-item').forEach(item => {
+  const key = item.dataset.menu;
+  if (!key || !MENUS[key]) return; // no menu for 'more' placeholder categories without data
+
+  item.addEventListener('mouseenter', () => {
+    clearTimeout(closeTimer);
+    openMenu(key, item);
+  });
+  item.addEventListener('mouseleave', scheduleClose);
+});
+
+megaMenu.addEventListener('mouseenter', () => clearTimeout(closeTimer));
+megaMenu.addEventListener('mouseleave', scheduleClose);
+backdrop.addEventListener('mouseenter', scheduleClose);
+
+// Prevent link default for prototype
+document.querySelectorAll('a[href="#"]').forEach(a => a.addEventListener('click', e => e.preventDefault()));
+
+// ══════════════════════════════════════════════════════════
+// ADMIN PANEL LOGIC
+// ══════════════════════════════════════════════════════════
+
+const adminPanel       = document.getElementById('adminPanel');
+const adminCollapseBtn = document.getElementById('adminCollapseBtn');
+const adminCatInput    = document.getElementById('adminCatInput');
+const adminLoadBtn     = document.getElementById('adminLoadBtn');
+const adminMsg         = document.getElementById('adminMsg');
+const adminDetail      = document.getElementById('adminDetail');
+const adminCatName     = document.getElementById('adminCatName');
+const adminCatIdBadge  = document.getElementById('adminCatIdBadge');
+const adminSlots       = document.getElementById('adminSlots');
+
+const adminEditorEmpty    = document.getElementById('adminEditorEmpty');
+const adminEditorForm     = document.getElementById('adminEditorForm');
+const adminFormTitle      = document.getElementById('adminFormTitle');
+const adminFormSubtitle   = document.getElementById('adminFormSubtitle');
+const adminTypeSelect     = document.getElementById('adminTypeSelect');
+const fieldLabel          = document.getElementById('fieldLabel');
+const fieldUrl            = document.getElementById('fieldUrl');
+const fieldCatId          = document.getElementById('fieldCatId');
+const adminLabelList      = document.getElementById('adminLabelList');
+const adminUrlInput       = document.getElementById('adminUrlInput');
+const adminUrlLabel       = document.getElementById('adminUrlLabel');
+const adminCatIdField     = document.getElementById('adminCatIdField');
+const adminCatIdSearchBtn = document.getElementById('adminCatIdSearchBtn');
+const adminCatIdResult    = document.getElementById('adminCatIdResult');
+const adminSaveBtn        = document.getElementById('adminSaveBtn');
+const adminCancelBtn      = document.getElementById('adminCancelBtn');
+const adminSaveStatus     = document.getElementById('adminSaveStatus');
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let adminCurrentKey  = null;
+let activeSlotIndex  = null;
+let pendingCatIdItem = null;  // resolved CatID result pending save
+let selectedLabelItem= null;  // selected label item pending save
+
+// ─── COLLAPSE ────────────────────────────────────────────────────────────────
+adminCollapseBtn.addEventListener('click', () => {
+  adminPanel.classList.toggle('collapsed');
+  adminCollapseBtn.textContent = adminPanel.classList.contains('collapsed') ? '▲' : '▼';
+});
+
+// ─── LOAD CATEGORY ───────────────────────────────────────────────────────────
+function loadCategory(catId) {
+  const id = catId.trim();
+  const key = CATID_MAP[id] || (id.toLowerCase() === 'specials' ? 'specials' : null);
+  adminMsg.textContent = '';
+
+  if (!key) {
+    adminMsg.innerHTML = `<span class="admin-error">✕ No category for ID "${id}"</span>`;
+    adminDetail.classList.remove('visible');
+    adminCurrentKey = null;
+    return;
+  }
+
+  adminCurrentKey = key;
+  const data = MENUS[key];
+  adminCatName.textContent = data.heading;
+  adminCatIdBadge.textContent = `CatID: ${id}`;
+  adminMsg.innerHTML = `<span class="admin-hint">✓ Loaded</span>`;
+
+  // Update detail page link and remember last catId
+  const detailLink = document.getElementById('adminDetailLink');
+  if (detailLink) detailLink.href = `category-detail.html?catId=${id}`;
+  try { localStorage.setItem('bh_last_catId', id); } catch {}
+
+  // reset editor
+  closeEditor();
+  renderAdminSlots(key);
+  adminDetail.classList.add('visible');
+}
+
+adminLoadBtn.addEventListener('click', () => {
+  closeTypeahead();
+  loadCategory(adminCatInput.value);
+});
+adminCatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { closeTypeahead(); loadCategory(adminCatInput.value); }
+});
+
+// ─── TYPEAHEAD ────────────────────────────────────────────────────────────────
+
+const adminTypeaheadDropdown = document.getElementById('adminTypeaheadDropdown');
+
+// Build a flat lookup list: [{id, key, name}]
+const CATEGORY_LIST = Object.entries(CATID_MAP).map(([id, key]) => ({
+  id,
+  key,
+  name: MENUS[key].heading.replace(/^All /, '').replace(/^Current /, '')
+}));
+
+let typeaheadFocusIdx = -1;
+
+function highlightMatch(text, query) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    text.slice(0, idx) +
+    '<mark>' + text.slice(idx, idx + query.length) + '</mark>' +
+    text.slice(idx + query.length)
+  );
+}
+
+function renderTypeahead(query) {
+  const q = query.trim().toLowerCase();
+  adminTypeaheadDropdown.innerHTML = '';
+  typeaheadFocusIdx = -1;
+
+  if (!q) { closeTypeahead(); return; }
+
+  const matches = CATEGORY_LIST.filter(c =>
+    c.id.includes(q) || c.name.toLowerCase().includes(q)
+  );
+
+  if (matches.length === 0) {
+    adminTypeaheadDropdown.innerHTML =
+      `<div class="typeahead-empty">No categories match "${query}"</div>`;
+    adminTypeaheadDropdown.classList.add('open');
+    return;
+  }
+
+  matches.forEach((cat, idx) => {
+    const item = document.createElement('div');
+    item.className = 'typeahead-item';
+    item.setAttribute('role', 'option');
+    item.dataset.id = cat.id;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'typeahead-item-name';
+    nameSpan.innerHTML = highlightMatch(cat.name, query.trim());
+
+    const idSpan = document.createElement('span');
+    idSpan.className = 'typeahead-item-id';
+    idSpan.innerHTML = 'CatID: ' + highlightMatch(cat.id, query.trim());
+
+    item.appendChild(nameSpan);
+    item.appendChild(idSpan);
+
+    item.addEventListener('mousedown', e => {
+      // mousedown fires before blur — prevent blur from closing dropdown first
+      e.preventDefault();
+    });
+    item.addEventListener('click', () => {
+      adminCatInput.value = cat.id;
+      closeTypeahead();
+      loadCategory(cat.id);
+    });
+
+    adminTypeaheadDropdown.appendChild(item);
+  });
+
+  adminTypeaheadDropdown.classList.add('open');
+}
+
+function closeTypeahead() {
+  adminTypeaheadDropdown.classList.remove('open');
+  typeaheadFocusIdx = -1;
+}
+
+function moveFocus(dir) {
+  const items = adminTypeaheadDropdown.querySelectorAll('.typeahead-item');
+  if (!items.length) return;
+  items[typeaheadFocusIdx]?.classList.remove('focused');
+  typeaheadFocusIdx = Math.max(0, Math.min(items.length - 1, typeaheadFocusIdx + dir));
+  items[typeaheadFocusIdx].classList.add('focused');
+  items[typeaheadFocusIdx].scrollIntoView({ block: 'nearest' });
+}
+
+adminCatInput.addEventListener('input', () => renderTypeahead(adminCatInput.value));
+
+adminCatInput.addEventListener('keydown', e => {
+  const isOpen = adminTypeaheadDropdown.classList.contains('open');
+  if (e.key === 'ArrowDown') { e.preventDefault(); if (isOpen) moveFocus(1); else renderTypeahead(adminCatInput.value); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); moveFocus(-1); }
+  else if (e.key === 'Escape') { closeTypeahead(); }
+  else if (e.key === 'Enter') {
+    const focused = adminTypeaheadDropdown.querySelector('.typeahead-item.focused');
+    if (focused) {
+      adminCatInput.value = focused.dataset.id;
+      closeTypeahead();
+      loadCategory(focused.dataset.id);
+      e.preventDefault();
+    }
+  }
+});
+
+adminCatInput.addEventListener('focus', () => {
+  if (adminCatInput.value.trim()) renderTypeahead(adminCatInput.value);
+});
+
+adminCatInput.addEventListener('blur', () => {
+  // Small delay so click on item fires first
+  setTimeout(closeTypeahead, 150);
+});
+
+// ─── RENDER SLOT LIST (with drag & drop) ─────────────────────────────────────
+let dragSrcIndex = null;
+
+function renderAdminSlots(menuKey) {
+  adminSlots.innerHTML = '';
+  const slots = featuredItems[menuKey];
+
+  slots.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'admin-slot-row' + (i === activeSlotIndex ? ' active' : '');
+    row.draggable = true;
+    row.dataset.index = i;
+
+    // ── Drag handle ──────────────────────────────────────────
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.innerHTML = '&#8942;&#8942;';   // ⠿⠿ grip dots
+    handle.title = 'Drag to reorder';
+    row.appendChild(handle);
+
+    // ── Click to open editor (not on remove btn) ──────────────
+    row.addEventListener('click', () => openEditor(menuKey, i));
+
+    // ── Slot number ───────────────────────────────────────────
+    const num = document.createElement('span');
+    num.className = 'admin-slot-row-num';
+    num.textContent = `Slot ${i + 1}`;
+    row.appendChild(num);
+
+    if (item) {
+      const lbl = document.createElement('span');
+      lbl.className = 'admin-slot-row-label';
+      lbl.textContent = item.label;
+      row.appendChild(lbl);
+
+      const typeBadge = document.createElement('span');
+      typeBadge.className = 'admin-slot-row-type';
+      typeBadge.textContent = item.type;
+      row.appendChild(typeBadge);
+
+      const rmBtn = document.createElement('button');
+      rmBtn.className = 'admin-slot-row-remove';
+      rmBtn.title = 'Remove';
+      rmBtn.textContent = '✕';
+      rmBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        featuredItems[menuKey][i] = null;
+        if (activeSlotIndex === i) closeEditor();
+        renderAdminSlots(menuKey);
+        syncToStorage();
+        if (activeMenu === menuKey) renderL1(menuKey);
+      });
+      row.appendChild(rmBtn);
+    } else {
+      const lbl = document.createElement('span');
+      lbl.className = 'admin-slot-row-label empty';
+      lbl.textContent = '—  empty';
+      row.appendChild(lbl);
+
+      const addLbl = document.createElement('span');
+      addLbl.className = 'admin-add-label';
+      addLbl.textContent = 'Add +';
+      row.appendChild(addLbl);
+    }
+
+    // ── Drag events ───────────────────────────────────────────
+    row.addEventListener('dragstart', e => {
+      dragSrcIndex = i;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', i);
+      // Use the handle as drag image offset
+      e.dataTransfer.setDragImage(row, 16, 15);
+    });
+
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      clearDragOver();
+      dragSrcIndex = null;
+    });
+
+    row.addEventListener('dragover', e => {
+      if (dragSrcIndex === null || dragSrcIndex === i) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      clearDragOver();
+      row.classList.add('drag-over');
+    });
+
+    row.addEventListener('dragleave', e => {
+      if (!row.contains(e.relatedTarget)) row.classList.remove('drag-over');
+    });
+
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrcIndex === null || dragSrcIndex === i) return;
+
+      // Reorder array
+      const arr = featuredItems[menuKey];
+      const moved = arr.splice(dragSrcIndex, 1)[0];
+      arr.splice(i, 0, moved);
+
+      // Keep editor open on the moved item
+      if (activeSlotIndex === dragSrcIndex) activeSlotIndex = i;
+      else if (activeSlotIndex !== null) {
+        // Adjust index if it shifted
+        if (dragSrcIndex < activeSlotIndex && i >= activeSlotIndex) activeSlotIndex--;
+        else if (dragSrcIndex > activeSlotIndex && i <= activeSlotIndex) activeSlotIndex++;
+      }
+
+      dragSrcIndex = null;
+      renderAdminSlots(menuKey);
+      syncToStorage();
+      if (activeMenu === menuKey) renderL1(menuKey);
+    });
+
+    adminSlots.appendChild(row);
+  });
+}
+
+function clearDragOver() {
+  adminSlots.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over'));
+}
+
+
+// ─── OPEN / CLOSE EDITOR ─────────────────────────────────────────────────────
+function openEditor(menuKey, slotIndex) {
+  activeSlotIndex = slotIndex;
+  const existing = featuredItems[menuKey][slotIndex];
+
+  // update active row highlight
+  Array.from(adminSlots.querySelectorAll('.admin-slot-row')).forEach((r, i) => {
+    r.classList.toggle('active', i === slotIndex);
+  });
+
+  adminFormTitle.textContent = `Slot ${slotIndex + 1}`;
+  adminFormSubtitle.textContent = existing ? `Currently: ${existing.label}` : 'Empty — choose a type to add an item';
+
+  // reset fields
+  adminTypeSelect.value = existing ? existing.type : '';
+  adminUrlInput.value   = existing && existing.type === 'url'   ? (existing.url   || '') : '';
+  adminUrlLabel.value   = existing && existing.type === 'url'   ? (existing.label || '') : '';
+  adminCatIdField.value = existing && existing.type === 'catid' ? (existing.catId || '') : '';
+  adminCatIdResult.className = 'admin-catid-result';
+  adminCatIdResult.textContent = '';
+  pendingCatIdItem  = null;
+  selectedLabelItem = existing && existing.type === 'label' ? existing : null;
+
+  showTypeFields(existing ? existing.type : '');
+  updateSaveEnabled();
+
+  adminEditorEmpty.style.display = 'none';
+  adminEditorForm.classList.add('visible');
+
+  // Pre-populate label list if type === label
+  if (existing && existing.type === 'label') {
+    renderLabelList(menuKey, existing.label);
+  } else if (!existing) {
+    renderLabelList(menuKey, null);
+  }
+}
+
+function closeEditor() {
+  activeSlotIndex = null;
+  pendingCatIdItem = null;
+  selectedLabelItem = null;
+  adminEditorForm.classList.remove('visible');
+  adminEditorEmpty.style.display = '';
+  Array.from(adminSlots.querySelectorAll('.admin-slot-row')).forEach(r => r.classList.remove('active'));
+}
+
+adminCancelBtn.addEventListener('click', closeEditor);
+
+// ─── TYPE SELECTOR ────────────────────────────────────────────────────────────
+function showTypeFields(type) {
+  fieldLabel.style.display  = type === 'label' ? 'block' : 'none';
+  fieldUrl.style.display    = type === 'url'   ? 'flex'  : 'none';
+  fieldUrl.style.flexDirection = 'column';
+  fieldUrl.style.gap = '14px';
+  fieldCatId.style.display  = type === 'catid' ? 'block' : 'none';
+  if (type === 'label' && adminCurrentKey) {
+    renderLabelList(adminCurrentKey, selectedLabelItem ? selectedLabelItem.label : null);
+  }
+}
+
+adminTypeSelect.addEventListener('change', () => {
+  pendingCatIdItem  = null;
+  selectedLabelItem = null;
+  adminCatIdResult.className = 'admin-catid-result';
+  adminCatIdResult.textContent = '';
+  showTypeFields(adminTypeSelect.value);
+  updateSaveEnabled();
+});
+
+// ─── LABEL LIST ──────────────────────────────────────────────────────────────
+function renderLabelList(menuKey, selectedLabel) {
+  adminLabelList.innerHTML = '';
+  const cats = (MENUS[menuKey]?.categories || []).filter(Boolean);
+  const usedLabels = new Set(
+    (featuredItems[menuKey] || [])
+      .filter((s, i) => s && i !== activeSlotIndex)
+      .map(s => s.label)
+  );
+
+  cats.forEach(cat => {
+    const item = document.createElement('div');
+    const isSelected = cat.label === selectedLabel;
+    const isUsed = usedLabels.has(cat.label);
+    item.className = 'admin-label-item' + (isSelected ? ' selected' : '');
+    item.innerHTML = `<span>${cat.label}</span>${isSelected ? '<span class="label-check">✓</span>' : ''}`;
+    if (isUsed && !isSelected) {
+      item.style.opacity = '0.4';
+      item.style.cursor = 'not-allowed';
+      item.title = 'Already used in another slot';
+    } else {
+      item.addEventListener('click', () => {
+        selectedLabelItem = { type: 'label', label: cat.label, children: cat.children };
+        renderLabelList(menuKey, cat.label);
+        updateSaveEnabled();
+      });
+    }
+    adminLabelList.appendChild(item);
+  });
+}
+
+// ─── CATID SEARCH ────────────────────────────────────────────────────────────
+adminCatIdSearchBtn.addEventListener('click', searchCatId);
+adminCatIdField.addEventListener('keydown', e => { if (e.key === 'Enter') searchCatId(); });
+
+function searchCatId() {
+  const id = adminCatIdField.value.trim();
+  const key = CATID_MAP[id];
+  adminCatIdResult.className = 'admin-catid-result';
+  pendingCatIdItem = null;
+  if (!id) { adminCatIdResult.textContent = ''; return; }
+  if (key) {
+    const data = MENUS[key];
+    adminCatIdResult.textContent = `✓ Found: ${data.heading}`;
+    adminCatIdResult.classList.add('visible');
+    pendingCatIdItem = { type: 'catid', catId: id, label: data.heading.replace(/^All /, ''), children: data.categories.filter(Boolean) };
+  } else {
+    adminCatIdResult.textContent = `✕ CatID "${id}" not found in this prototype`;
+    adminCatIdResult.classList.add('visible', 'error');
+  }
+  updateSaveEnabled();
+}
+
+// ─── SAVE ENABLED STATE ──────────────────────────────────────────────────────
+function updateSaveEnabled() {
+  const type = adminTypeSelect.value;
+  let enabled = false;
+  if (type === 'label')  enabled = !!selectedLabelItem;
+  if (type === 'url')    enabled = adminUrlInput.value.trim().length > 0 && adminUrlLabel.value.trim().length > 0;
+  if (type === 'catid')  enabled = !!pendingCatIdItem;
+  adminSaveBtn.disabled = !enabled;
+}
+
+[adminUrlInput, adminUrlLabel].forEach(el => el.addEventListener('input', updateSaveEnabled));
+
+// ─── SAVE ────────────────────────────────────────────────────────────────────
+adminSaveBtn.addEventListener('click', () => {
+  if (!adminCurrentKey || activeSlotIndex === null) return;
+  const type = adminTypeSelect.value;
+  let item = null;
+
+  if (type === 'label' && selectedLabelItem)  item = selectedLabelItem;
+  if (type === 'catid' && pendingCatIdItem)   item = pendingCatIdItem;
+  if (type === 'url') {
+    const url = adminUrlInput.value.trim();
+    const label = adminUrlLabel.value.trim();
+    if (url && label) item = { type: 'url', url, label };
+  }
+
+  if (!item) return;
+
+  featuredItems[adminCurrentKey][activeSlotIndex] = item;
+  adminSaveStatus.textContent = '✓ Saved';
+  setTimeout(() => { adminSaveStatus.textContent = ''; }, 2000);
+  syncToStorage();
+  renderAdminSlots(adminCurrentKey);
+  if (activeMenu === adminCurrentKey) renderL1(adminCurrentKey);
+
+  // re-open same slot to show updated state
+  openEditor(adminCurrentKey, activeSlotIndex);
+});
+
+</script>
+</body>
+</html>
