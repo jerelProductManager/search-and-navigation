@@ -516,13 +516,6 @@
     color: var(--adm-muted);
     white-space: nowrap;
   }
-  .typeahead-item-parent {
-    font-size: 10px;
-    color: var(--adm-green2);
-    white-space: nowrap;
-    opacity: 0.85;
-    margin-right: 4px;
-  }
   .typeahead-item-id mark {
     background: #fff3a0;
     color: var(--adm-muted);
@@ -583,33 +576,6 @@
   .admin-slot-row-remove { background: none; border: none; color: #993333; cursor: pointer; font-size: 12px; padding: 0 0 0 6px; line-height: 1; flex-shrink: 0; }
   .admin-slot-row-remove:hover { color: var(--adm-red); }
   .admin-add-label { font-size: 10px; color: var(--adm-gold); font-weight: bold; margin-left: auto; flex-shrink: 0; text-decoration: underline; cursor: pointer; }
-  .admin-slot-row.non-featured { background: #fafafa; }
-  .admin-slot-row.non-featured:nth-child(even) { background: #f3f3f3; }
-  .admin-slot-row.non-featured:hover { background: #e8f0e0; }
-  .admin-slot-section-header {
-    padding: 4px 10px;
-    font-size: 10px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    background: var(--adm-cream2);
-    border-top: 2px solid var(--adm-green2);
-    border-bottom: 1px solid var(--adm-border);
-    color: var(--adm-green2);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    user-select: none;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-  .admin-slot-section-header span {
-    font-weight: normal;
-    opacity: 0.7;
-    text-transform: none;
-    letter-spacing: 0;
-  }
   .admin-editor-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
   .admin-editor-empty { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: var(--adm-muted); }
   .admin-editor-empty svg { width: 28px; height: 28px; opacity: 0.2; }
@@ -869,7 +835,7 @@
       <div class="admin-slots-header">
         <span class="admin-cat-name" id="adminCatName"></span>
         <span class="admin-cat-id-badge" id="adminCatIdBadge"></span>
-        <span class="admin-feat-label">★ Featured (1–5) &nbsp;·&nbsp; Categories (6–30)</span>
+        <span class="admin-feat-label">★ Featured Slots</span>
       </div>
       <div class="admin-slots-list" id="adminSlots"></div>
     </div>
@@ -927,10 +893,7 @@
             <div class="admin-field">
               <label>CatID</label>
               <div class="admin-catid-search-row">
-                <div class="admin-typeahead-wrap" style="flex:1">
-                  <input type="text" id="adminCatIdField" placeholder="ID or name…" autocomplete="off" />
-                  <div class="admin-typeahead-dropdown" id="slotCatIdDropdown" role="listbox"></div>
-                </div>
+                <input type="text" id="adminCatIdField" placeholder="e.g. 3755" />
                 <button class="admin-search-btn" id="adminCatIdSearchBtn">Search</button>
               </div>
             </div>
@@ -972,13 +935,13 @@ const CATID_MAP = {
 };
 
 // ─── FEATURED STATE ───────────────────────────────────────────────────────────
-// featuredItems[menuKey] = Array(30)  — slots 1–5 are featured, 6–30 are non-featured categories
+// featuredItems[menuKey] = [null, null, null, null, null]  (5 slots, null = empty)
 
 const featuredItems = {};
 Object.values(CATID_MAP).forEach(k => {
-  featuredItems[k] = Array(30).fill(null);
+  featuredItems[k] = Array(10).fill(null);
 });
-featuredItems['specials'] = Array(30).fill(null);
+featuredItems['specials'] = Array(10).fill(null);
 
 // Sync with localStorage (shared with category-detail.html)
 function syncToStorage() {
@@ -1256,452 +1219,9 @@ const MENUS = {
   }
 };
 
-// ─── CHILD CATEGORY DATA ─────────────────────────────────────────────────────
-// Maps catId → { name, parentKey } for all known child categories.
-// Strikethrough / deprecated entries are omitted.
+// ─── STATE ───────────────────────────────────────────────────────────────────
 
-const CHILD_CATS = {
-  // Photography
-  '9811':  { name: 'Digital Cameras',                    parentKey: 'photography' },
-  '15492': { name: 'Lenses',                             parentKey: 'photography' },
-  '9812':  { name: 'Film Cameras',                       parentKey: 'photography' },
-  '8310':  { name: 'Photo Tripods & Support',            parentKey: 'photography' },
-  '167':   { name: 'Photography Bags & Cases',           parentKey: 'photography' },
-  '6231':  { name: 'Memory Cards & Accessories',         parentKey: 'photography' },
-  '9818':  { name: 'Batteries & Power Accessories',      parentKey: 'photography' },
-  '18316': { name: 'Flashes & On Camera Lighting',       parentKey: 'photography' },
-  '16041': { name: 'Lens Filters',                       parentKey: 'photography' },
-  '19428': { name: 'Lens Accessories',                   parentKey: 'photography' },
-  '19423': { name: 'Photo Accessories',                  parentKey: 'photography' },
-  '18209': { name: 'Medium & Large Format Accessories',  parentKey: 'photography' },
-  '9954':  { name: 'Film',                               parentKey: 'photography' },
-  '24356': { name: 'All Content Creator Accessories',    parentKey: 'photography' },
-  '61959': { name: 'Portrait Photography',               parentKey: 'photography' },
-  '62211': { name: 'Wedding Photography',                parentKey: 'photography' },
-  '58799': { name: 'Volume Photography',                 parentKey: 'photography' },
-  '11585': { name: 'Underwater Photography',             parentKey: 'photography' },
-  '1161':  { name: 'Lighting & Studio',                  parentKey: 'photography' },
-  '4942':  { name: 'Darkroom Equipment',                 parentKey: 'photography' },
-  '13290': { name: 'Photo Software',                     parentKey: 'photography' },
-  '19977': { name: 'Books & Tutorials',                  parentKey: 'photography' },
-  '18318': { name: 'Scanners',                           parentKey: 'photography' },
-  '28467': { name: 'Photo Printers',                     parentKey: 'photography' },
-  '513':   { name: 'Presentation & Archiving',           parentKey: 'photography' },
-  // Computers
-  '18818': { name: 'Laptops',                            parentKey: 'computers' },
-  '37094': { name: 'Mac',                                parentKey: 'computers' },
-  '16688': { name: 'iPads & Tablets',                    parentKey: 'computers' },
-  '18817': { name: 'Desktops & Workstations',            parentKey: 'computers' },
-  '26717': { name: 'Computer Components',                parentKey: 'computers' },
-  '13216': { name: 'Drives & Storage',                   parentKey: 'computers' },
-  '13218': { name: 'Networking',                         parentKey: 'computers' },
-  '25766': { name: 'Monitors & Displays',                parentKey: 'computers' },
-  '22339': { name: 'Computer Peripherals',               parentKey: 'computers' },
-  '18317': { name: 'Printers',                           parentKey: 'computers' },
-  '24607': { name: 'Gaming',                             parentKey: 'computers' },
-  '15626': { name: 'Software & Tutorials',               parentKey: 'computers' },
-  '25567': { name: 'Tablet, Laptop & Computer Cases',    parentKey: 'computers' },
-  '13346': { name: 'Computer Cables & Adapters',         parentKey: 'computers' },
-  '24365': { name: 'Power Accessories',                  parentKey: 'computers' },
-  '17574': { name: 'Furniture',                          parentKey: 'computers' },
-  '29794': { name: 'Tablet Accessories',                 parentKey: 'computers' },
-  '23878': { name: 'Notebook Accessories',               parentKey: 'computers' },
-  '41603': { name: 'STEM',                               parentKey: 'computers' },
-  '31898': { name: 'Installation',                       parentKey: 'computers' },
-  // Lighting
-  '48382': { name: 'LED Lights',                         parentKey: 'lighting' },
-  '48456': { name: 'Tungsten Lights',                    parentKey: 'lighting' },
-  '1201':  { name: 'Fluorescent Lights',                 parentKey: 'lighting' },
-  '1377':  { name: 'HMI Lights',                         parentKey: 'lighting' },
-  '1225':  { name: 'Monolights',                         parentKey: 'lighting' },
-  '1168':  { name: 'Power Packs & Heads',                parentKey: 'lighting' },
-  '647':   { name: 'On Camera Flashes',                  parentKey: 'lighting' },
-  '1239':  { name: 'Remote Trigger Strobes',             parentKey: 'lighting' },
-  '51869': { name: 'DJ & Event Lighting',                parentKey: 'lighting' },
-  '55126': { name: 'Stage Lighting',                     parentKey: 'lighting' },
-  '57187': { name: 'Additional Light Types',             parentKey: 'lighting' },
-  '31158': { name: 'Softboxes & Accessories',            parentKey: 'lighting' },
-  '28874': { name: 'Umbrellas & Accessories',            parentKey: 'lighting' },
-  '31160': { name: 'Reflectors & Accessories',           parentKey: 'lighting' },
-  '57226': { name: 'More Light Modifiers',               parentKey: 'lighting' },
-  '5799':  { name: 'Light Stands',                       parentKey: 'lighting' },
-  '1362':  { name: 'Boom Equipment',                     parentKey: 'lighting' },
-  '27767': { name: 'Truss Equipment',                    parentKey: 'lighting' },
-  '19913': { name: 'Light Stands & Mounting Accessories',parentKey: 'lighting' },
-  '20388': { name: 'Power & Cables',                     parentKey: 'lighting' },
-  '57235': { name: 'Lighting Controllers',               parentKey: 'lighting' },
-  '6430':  { name: 'Lighting Cases, Carts & Hand Trucks',parentKey: 'lighting' },
-  '6280':  { name: 'Bulbs & Lamps',                      parentKey: 'lighting' },
-  '21923': { name: 'Light Meters & Accessories',         parentKey: 'lighting' },
-  '19916': { name: 'Lighting Accessories',               parentKey: 'lighting' },
-  '1175':  { name: 'Backgrounds',                        parentKey: 'lighting' },
-  '11098': { name: 'Tabletop Shooting',                  parentKey: 'lighting' },
-  '2426':  { name: 'Stage & Studio Accessories',         parentKey: 'lighting' },
-  '55457': { name: 'Special Effects Equipment',          parentKey: 'lighting' },
-  // Pro Audio
-  '15412': { name: 'Wireless Microphone Systems',        parentKey: 'proaudio' },
-  '14929': { name: 'Microphones',                        parentKey: 'proaudio' },
-  '12158': { name: 'Audio for Video',                    parentKey: 'proaudio' },
-  '56928': { name: 'Studio Recording',                   parentKey: 'proaudio' },
-  '20173': { name: 'Live Sound',                         parentKey: 'proaudio' },
-  '22902': { name: 'Mobile Recording',                   parentKey: 'proaudio' },
-  '46431': { name: 'Podcasting',                         parentKey: 'proaudio' },
-  '14235': { name: 'Installation Sound',                 parentKey: 'proaudio' },
-  '12156': { name: 'Musical Instruments',                parentKey: 'proaudio' },
-  '13932': { name: 'DJ Equipment',                       parentKey: 'proaudio' },
-  '12162': { name: 'Mixers',                             parentKey: 'proaudio' },
-  '12198': { name: 'Computer Audio Software',            parentKey: 'proaudio' },
-  '38229': { name: 'Headphones',                         parentKey: 'proaudio' },
-  '38230': { name: 'Headphone Accessories',              parentKey: 'proaudio' },
-  '16059': { name: 'Cables & Adapters',                  parentKey: 'proaudio' },
-  '16061': { name: 'Audio Cases & Accessories',          parentKey: 'proaudio' },
-  '16062': { name: 'Stands & Mounts',                    parentKey: 'proaudio' },
-  '20302': { name: 'Furniture & Rack Accessories',       parentKey: 'proaudio' },
-  '16066': { name: 'Acoustic Treatment',                 parentKey: 'proaudio' },
-  '16123': { name: 'In-Line Problem Solvers',            parentKey: 'proaudio' },
-  '2542':  { name: 'Audio Media',                        parentKey: 'proaudio' },
-  '10477': { name: 'Audio Books & Tutorials',            parentKey: 'proaudio' },
-  '16063': { name: 'Power Equipment',                    parentKey: 'proaudio' },
-  '16064': { name: 'General Accessories',                parentKey: 'proaudio' },
-  // Drones
-  '40226': { name: 'Beginner Drones',                    parentKey: 'drones' },
-  '40227': { name: 'Prosumer Camera Drones',             parentKey: 'drones' },
-  '40220': { name: 'FPV Racing',                         parentKey: 'drones' },
-  '23396': { name: 'All Drones',                         parentKey: 'drones' },
-  '40228': { name: 'Pro Cinema Drones',                  parentKey: 'drones' },
-  '40229': { name: 'Enterprise Drones',                  parentKey: 'drones' },
-  '51901': { name: 'Thermal Drones',                     parentKey: 'drones' },
-  '25733': { name: 'Underwater Drones',                  parentKey: 'drones' },
-  '51937': { name: 'Drone Batteries',                    parentKey: 'drones' },
-  '51935': { name: 'Drone Cases & Accessories',          parentKey: 'drones' },
-  '51936': { name: 'Drone Gimbals & Accessories',        parentKey: 'drones' },
-  '51938': { name: 'Drone Replacement Parts',            parentKey: 'drones' },
-  '51957': { name: 'Drone FPVs & Accessories',           parentKey: 'drones' },
-  '51958': { name: 'Remote Controllers & Accessories',   parentKey: 'drones' },
-  '51976': { name: 'Misc. Accessories',                  parentKey: 'drones' },
-  '25734': { name: 'Underwater Drone Accessories',       parentKey: 'drones' },
-  '27990': { name: 'Shop by Brand',                      parentKey: 'drones' },
-  // Camcorders
-  '30708': { name: 'Action Cameras & Accessories',       parentKey: 'camcorders' },
-  '1871':  { name: 'Consumer Camcorders',                parentKey: 'camcorders' },
-  '1881':  { name: 'Camcorders',                         parentKey: 'camcorders' },
-  '29185': { name: 'VR & 360 Video',                     parentKey: 'camcorders' },
-  '46764': { name: 'Live Streaming from Home Solutions', parentKey: 'camcorders' },
-  '47040': { name: 'Vlogging Creator',                   parentKey: 'camcorders' },
-  '4125':  { name: 'Media',                              parentKey: 'camcorders' },
-  '20057': { name: 'Support Equipment',                  parentKey: 'camcorders' },
-  '46803': { name: 'Camera Microphones',                 parentKey: 'camcorders' },
-  '2018':  { name: 'Batteries & Power',                  parentKey: 'camcorders' },
-  '4104':  { name: 'Consumer Video Cases',               parentKey: 'camcorders' },
-  '2102':  { name: 'Lenses',                             parentKey: 'camcorders' },
-  '20185': { name: 'Lighting',                           parentKey: 'camcorders' },
-  '28087': { name: 'Underwater Equipment',               parentKey: 'camcorders' },
-  '20553': { name: 'Accessories',                        parentKey: 'camcorders' },
-  '14767': { name: 'Editing Software & Peripherals',     parentKey: 'camcorders' },
-  // TVs & Entertainment
-  '2500':  { name: 'Televisions',                        parentKey: 'tv' },
-  '11907': { name: 'Streaming & Media Players',          parentKey: 'tv' },
-  '8883':  { name: 'Blu-ray & DVD Players',              parentKey: 'tv' },
-  '24072': { name: 'Soundbar Speakers',                  parentKey: 'tv' },
-  '17301': { name: 'Speakers',                           parentKey: 'tv' },
-  '28820': { name: 'Receivers & Amplifiers',             parentKey: 'tv' },
-  '20666': { name: 'Home Audio Components',              parentKey: 'tv' },
-  '4915':  { name: 'Tabletop Audio',                     parentKey: 'tv' },
-  '2116':  { name: 'Home Theater Projectors',            parentKey: 'tv' },
-  '9829':  { name: 'Projection Screens',                 parentKey: 'tv' },
-  '27603': { name: 'Projector Mounts & Accessories',     parentKey: 'tv' },
-  '29664': { name: 'Portable Audio',                     parentKey: 'tv' },
-  '12568': { name: 'Headphones',                         parentKey: 'tv' },
-  '30055': { name: 'Mobile Bluetooth Speakers',          parentKey: 'tv' },
-  '26337': { name: 'PC Gaming',                          parentKey: 'tv' },
-  '47038': { name: 'VR Gaming',                          parentKey: 'tv' },
-  '25493': { name: 'Smart Home',                         parentKey: 'tv' },
-  '4221':  { name: 'Cables & Accessories',               parentKey: 'tv' },
-  '30666': { name: 'Home Networking',                    parentKey: 'tv' },
-  '4920':  { name: 'Mounts',                             parentKey: 'tv' },
-  '16008': { name: 'Switchers, Extenders & More',        parentKey: 'tv' },
-  '11373': { name: 'Furniture',                          parentKey: 'tv' },
-  '61172': { name: 'TV Frames',                          parentKey: 'tv' },
-  '3455':  { name: 'General Accessories',                parentKey: 'tv' },
-  '16442': { name: 'Installation',                       parentKey: 'tv' },
-  // Audio-Visual
-  '1520':  { name: 'Projectors',                         parentKey: 'av' },
-  '17761': { name: 'Commercial Monitors & Displays',     parentKey: 'av' },
-  '17763': { name: 'Video Presenters',                   parentKey: 'av' },
-  '28109': { name: 'Digital Signage Solutions',          parentKey: 'av' },
-  '17760': { name: 'Whiteboards, Easels & Displays',     parentKey: 'av' },
-  '57124': { name: 'Video Walls Solutions',              parentKey: 'av' },
-  '47756': { name: 'Video Conferencing Solutions',       parentKey: 'av' },
-  '12571': { name: 'Assistive Listening',                parentKey: 'av' },
-  '60732': { name: 'Classroom Audio Systems',            parentKey: 'av' },
-  '17441': { name: 'Voice Recorders',                    parentKey: 'av' },
-  '60737': { name: 'Tour Guide Audio Systems',           parentKey: 'av' },
-  '47841': { name: 'Conferencing Microphones',           parentKey: 'av' },
-  '48565': { name: 'Presentation Microphones',           parentKey: 'av' },
-  '47759': { name: 'Conferencing Speakers',              parentKey: 'av' },
-  '60463': { name: 'Wireless Conferencing Systems',      parentKey: 'av' },
-  '20834': { name: 'PA Systems',                         parentKey: 'av' },
-  '43895': { name: 'Cinema Loudspeaker Systems',         parentKey: 'av' },
-  '20840': { name: 'AV Microphones',                     parentKey: 'av' },
-  '1522':  { name: 'Multimedia Projector Accessories',   parentKey: 'av' },
-  '57130': { name: 'Commercial Displays Accessories',    parentKey: 'av' },
-  '8555':  { name: 'AV Cables & Accessories',            parentKey: 'av' },
-  '24253': { name: 'Signal Processing & Distribution',   parentKey: 'av' },
-  '1562':  { name: 'Mounts & Carts',                     parentKey: 'av' },
-  '22894': { name: 'Projector & Presentation Lamps',     parentKey: 'av' },
-  '20835': { name: 'Lecterns & Podiums',                 parentKey: 'av' },
-  '20585': { name: 'Presentation Timers & Displays',     parentKey: 'av' },
-  // Optics
-  '979':   { name: 'Binoculars',                         parentKey: 'optics' },
-  '3389':  { name: 'Telescopes',                         parentKey: 'optics' },
-  '980':   { name: 'Spotting Scopes',                    parentKey: 'optics' },
-  '13521': { name: 'Riflescopes & Sights',               parentKey: 'optics' },
-  '14430': { name: 'Night & Thermal Vision',             parentKey: 'optics' },
-  '25909': { name: 'Field Accessories',                  parentKey: 'optics' },
-  '17400': { name: 'Monoculars',                         parentKey: 'optics' },
-  '37565': { name: 'Laser Rangefinders',                 parentKey: 'optics' },
-  '12412': { name: 'Microscopes',                        parentKey: 'optics' },
-  // Mobile
-  '51772': { name: 'iPads',                              parentKey: 'mobile' },
-  '51773': { name: 'Android Tablets',                    parentKey: 'mobile' },
-  '51892': { name: 'Windows Tablets',                    parentKey: 'mobile' },
-  '51774': { name: 'Gimbal Stabilizers',                 parentKey: 'mobile' },
-  '51782': { name: 'Vlogging Kits',                      parentKey: 'mobile' },
-  '24357': { name: 'Rigs',                               parentKey: 'mobile' },
-  '22909': { name: 'Mobile Microphones',                 parentKey: 'mobile' },
-  '22903': { name: 'Mobile Audio Interfaces',            parentKey: 'mobile' },
-  '24416': { name: 'Smartphone Accessories',             parentKey: 'mobile' },
-  '20270': { name: 'Mobile Speakers',                    parentKey: 'mobile' },
-  '24005': { name: 'Smart Glasses & Accessories',        parentKey: 'mobile' },
-  // Surveillance
-  '25510': { name: 'Security Cameras',                   parentKey: 'surveillance' },
-  '3672':  { name: 'Surveillance Systems',               parentKey: 'surveillance' },
-  '25507': { name: 'Video Recorders',                    parentKey: 'surveillance' },
-  '23196': { name: 'Video Management Software',          parentKey: 'surveillance' },
-  '23730': { name: 'Camera Accessories',                 parentKey: 'surveillance' },
-  '13862': { name: 'Audio Surveillance',                 parentKey: 'surveillance' },
-  '24824': { name: 'Access Control',                     parentKey: 'surveillance' },
-  '60186': { name: 'Safes & Cabinets',                   parentKey: 'surveillance' },
-  '20323': { name: 'Counter Surveillance',               parentKey: 'surveillance' },
-  '24818': { name: 'Alarm Systems',                      parentKey: 'surveillance' },
-  '24821': { name: 'Alarm Accessories',                  parentKey: 'surveillance' },
-  '61735': { name: 'IP Speakers',                        parentKey: 'surveillance' },
-  '36144': { name: 'Illuminators',                       parentKey: 'surveillance' },
-  '25553': { name: 'ID Card Printers',                   parentKey: 'surveillance' },
-  '34573': { name: 'Badge Accessories',                  parentKey: 'surveillance' },
-};
-
-// ─── MENU SECTION LABELS ─────────────────────────────────────────────────────
-// Only the blue section-header labels from each category's child list are shown
-// in the Label picker. Keys without an entry fall back to the full category list.
-
-const MENU_LABELS = {
-  photography: [
-    { label: 'Cameras & Lenses', children: [
-      { label: 'Digital Cameras' }, { label: 'Lenses' }, { label: 'Film Cameras' },
-    ]},
-    { label: 'Accessories', children: [
-      { label: 'Photo Tripods & Support' }, { label: 'Photography Bags & Cases' },
-      { label: 'Memory Cards & Accessories' }, { label: 'Batteries & Power Accessories' },
-      { label: 'Flashes & On Camera Lighting' }, { label: 'Lens Filters' },
-      { label: 'Lens Accessories' }, { label: 'Photo Accessories' },
-      { label: 'Medium & Large Format Accessories' }, { label: 'Film' },
-      { label: 'All Content Creator Accessories' },
-    ]},
-    { label: 'Applications', children: [
-      { label: 'Portrait Photography' }, { label: 'Wedding Photography' },
-      { label: 'Volume Photography' }, { label: 'Underwater Photography' },
-    ]},
-    { label: 'More in Photography', children: [
-      { label: 'Lighting & Studio' }, { label: 'Darkroom Equipment' },
-      { label: 'Photo Software' }, { label: 'Books & Tutorials' },
-    ]},
-    { label: 'Scan, Print & Present', children: [
-      { label: 'Scanners' }, { label: 'Photo Printers' }, { label: 'Presentation & Archiving' },
-    ]},
-  ],
-  computers: [
-    { label: 'Computers & Tablets', children: [
-      { label: 'Laptops' }, { label: 'Mac' }, { label: 'iPads & Tablets' },
-      { label: 'Desktops & Workstations' },
-    ]},
-    { label: 'Hardware & Software', children: [
-      { label: 'Computer Components' }, { label: 'Drives & Storage' }, { label: 'Networking' },
-      { label: 'Monitors & Displays' }, { label: 'Computer Peripherals' }, { label: 'Printers' },
-      { label: 'Gaming' }, { label: 'Scanners' }, { label: 'Software & Tutorials' },
-    ]},
-    { label: 'Accessories', children: [
-      { label: 'Tablet, Laptop & Computer Cases' }, { label: 'Computer Cables & Adapters' },
-      { label: 'Power Accessories' }, { label: 'Furniture' }, { label: 'Tablet Accessories' },
-      { label: 'Notebook Accessories' }, { label: 'STEM' }, { label: 'Installation' },
-    ]},
-  ],
-  lighting: [
-    { label: 'Photo & Video Lights', children: [
-      { label: 'LED Lights' }, { label: 'Tungsten Lights' },
-      { label: 'Fluorescent Lights' }, { label: 'HMI Lights' },
-    ]},
-    { label: 'Strobe Lighting', children: [
-      { label: 'Monolights' }, { label: 'Power Packs & Heads' },
-      { label: 'On Camera Flashes' }, { label: 'Remote Trigger Strobes' },
-    ]},
-    { label: 'Specialty Lighting', children: [
-      { label: 'DJ & Event Lighting' }, { label: 'Stage Lighting' },
-      { label: 'Additional Light Types' },
-    ]},
-    { label: 'Light Modifiers', children: [
-      { label: 'Softboxes & Accessories' }, { label: 'Umbrellas & Accessories' },
-      { label: 'Reflectors & Accessories' }, { label: 'More Light Modifiers' },
-    ]},
-    { label: 'Light Stands & Mounting', children: [
-      { label: 'Light Stands' }, { label: 'Boom Equipment' }, { label: 'Truss Equipment' },
-      { label: 'Light Stands & Mounting Accessories' },
-    ]},
-    { label: 'Accessories', children: [
-      { label: 'Power & Cables' }, { label: 'Lighting Controllers' },
-      { label: 'Lighting Cases, Carts & Hand Trucks' }, { label: 'Bulbs & Lamps' },
-      { label: 'Light Meters & Accessories' }, { label: 'Lighting Accessories' },
-    ]},
-    { label: 'Studio Equipment', children: [
-      { label: 'Backgrounds' }, { label: 'Tabletop Shooting' },
-      { label: 'Stage & Studio Accessories' }, { label: 'Special Effects Equipment' },
-    ]},
-  ],
-  proaudio: [
-    { label: 'Accessories', children: [
-      { label: 'Headphones' }, { label: 'Headphone Accessories' }, { label: 'Cables & Adapters' },
-      { label: 'Audio Cases & Accessories' }, { label: 'Stands & Mounts' },
-      { label: 'Furniture & Rack Accessories' }, { label: 'Acoustic Treatment' },
-      { label: 'In-Line Problem Solvers' }, { label: 'Audio Media' },
-      { label: 'Audio Books & Tutorials' }, { label: 'Power Equipment' },
-      { label: 'General Accessories' },
-    ]},
-  ],
-  drones: [
-    { label: 'Prosumer & FPV Drones', children: [
-      { label: 'Beginner Drones' }, { label: 'Prosumer Camera Drones' },
-      { label: 'FPV Racing' }, { label: 'All Drones' },
-    ]},
-    { label: 'Professional & Underwater Drones', children: [
-      { label: 'Pro Cinema Drones' }, { label: 'Enterprise Drones' },
-      { label: 'Thermal Drones' }, { label: 'Underwater Drones' },
-    ]},
-    { label: 'Drone Parts & Accessories', children: [
-      { label: 'Drone Batteries' }, { label: 'Drone Cases & Accessories' },
-      { label: 'Drone Gimbals & Accessories' }, { label: 'Drone Replacement Parts' },
-      { label: 'Drone FPVs & Accessories' }, { label: 'Remote Controllers & Accessories' },
-      { label: 'Misc. Accessories' }, { label: 'Underwater Drone Accessories' },
-      { label: 'Shop by Brand' },
-    ]},
-  ],
-  camcorders: [
-    { label: 'Applications', children: [
-      { label: 'Live Streaming from Home Solutions' }, { label: 'Vlogging Creator' },
-    ]},
-    { label: 'Accessories', children: [
-      { label: 'Media' }, { label: 'Support Equipment' }, { label: 'Camera Microphones' },
-      { label: 'Batteries & Power' }, { label: 'Consumer Video Cases' }, { label: 'Lenses' },
-      { label: 'Lighting' }, { label: 'Underwater Equipment' }, { label: 'Accessories' },
-      { label: 'Editing Software & Peripherals' },
-    ]},
-  ],
-  tv: [
-    { label: 'TV & Video', children: [
-      { label: 'Televisions' }, { label: 'Streaming & Media Players' },
-      { label: 'Blu-ray & DVD Players' }, { label: 'Soundbar Speakers' },
-    ]},
-    { label: 'Home Audio', children: [
-      { label: 'Speakers' }, { label: 'Receivers & Amplifiers' },
-      { label: 'Home Audio Components' }, { label: 'Tabletop Audio' },
-    ]},
-    { label: 'Home Theater Projection', children: [
-      { label: 'Home Theater Projectors' }, { label: 'Projection Screens' },
-      { label: 'Projector Mounts & Accessories' },
-    ]},
-    { label: 'Portable Audio', children: [
-      { label: 'Portable Audio' }, { label: 'Headphones' }, { label: 'Mobile Bluetooth Speakers' },
-    ]},
-    { label: 'Gaming', children: [
-      { label: 'PC Gaming' }, { label: 'VR Gaming' },
-    ]},
-    { label: 'Accessories', children: [
-      { label: 'Smart Home' }, { label: 'Cables & Accessories' }, { label: 'Home Networking' },
-      { label: 'Mounts' }, { label: 'Switchers, Extenders & More' }, { label: 'Furniture' },
-      { label: 'TV Frames' }, { label: 'General Accessories' }, { label: 'Installation' },
-    ]},
-  ],
-  av: [
-    { label: 'Projection & Display', children: [
-      { label: 'Projectors' }, { label: 'Commercial Monitors & Displays' },
-      { label: 'Video Presenters' }, { label: 'Projection Screens' },
-    ]},
-    { label: 'Complete Solutions', children: [
-      { label: 'Digital Signage Solutions' }, { label: 'Whiteboards, Easels & Displays' },
-      { label: 'Video Walls Solutions' }, { label: 'Video Conferencing Solutions' },
-    ]},
-    { label: 'Audio Presentation', children: [
-      { label: 'Assistive Listening' }, { label: 'Classroom Audio Systems' },
-      { label: 'Voice Recorders' }, { label: 'Tour Guide Audio Systems' },
-    ]},
-    { label: 'Audio Conferencing', children: [
-      { label: 'Conferencing Microphones' }, { label: 'Presentation Microphones' },
-      { label: 'Conferencing Speakers' }, { label: 'Wireless Conferencing Systems' },
-    ]},
-    { label: 'Pro Audio Solutions', children: [
-      { label: 'PA Systems' }, { label: 'Cinema Loudspeaker Systems' },
-      { label: 'AV Microphones' }, { label: 'Installation Sound' },
-    ]},
-    { label: 'Accessories', children: [
-      { label: 'Multimedia Projector Accessories' }, { label: 'Commercial Displays Accessories' },
-      { label: 'AV Cables & Accessories' }, { label: 'Signal Processing & Distribution' },
-      { label: 'Mounts & Carts' }, { label: 'Projector & Presentation Lamps' },
-      { label: 'Lecterns & Podiums' }, { label: 'Presentation Timers & Displays' },
-      { label: 'Installation' },
-    ]},
-  ],
-  optics: [
-    { label: 'Optics', children: [
-      { label: 'Binoculars' }, { label: 'Telescopes' }, { label: 'Spotting Scopes' },
-      { label: 'Riflescopes & Sights' }, { label: 'Night & Thermal Vision' },
-      { label: 'Field Accessories' }, { label: 'Monoculars' }, { label: 'Laser Rangefinders' },
-      { label: 'Microscopes' },
-    ]},
-  ],
-  mobile: [
-    { label: 'Mobile Devices', children: [
-      { label: 'iPads' }, { label: 'Android Tablets' }, { label: 'Windows Tablets' },
-    ]},
-    { label: 'Mobile Content Creator', children: [
-      { label: 'Gimbal Stabilizers' }, { label: 'Vlogging Kits' }, { label: 'Rigs' },
-      { label: 'All Content Creator Accessories' },
-    ]},
-    { label: 'Mobile Audio Solutions', children: [
-      { label: 'Mobile Microphones' }, { label: 'Mobile Audio Interfaces' },
-      { label: 'Mobile Recording' },
-    ]},
-    { label: 'General Accessories', children: [
-      { label: 'Smartphone Accessories' }, { label: 'Headphones' },
-      { label: 'Mobile Speakers' }, { label: 'Smart Glasses & Accessories' },
-    ]},
-  ],
-  surveillance: [
-    { label: 'Surveillance', children: [
-      { label: 'Security Cameras' }, { label: 'Surveillance Systems' },
-      { label: 'Video Recorders' }, { label: 'Video Management Software' },
-      { label: 'Camera Accessories' }, { label: 'Audio Surveillance' },
-    ]},
-    { label: 'Security', children: [
-      { label: 'Access Control' }, { label: 'Safes & Cabinets' },
-      { label: 'Counter Surveillance' }, { label: 'Alarm Systems' },
-      { label: 'Alarm Accessories' }, { label: 'IP Speakers' }, { label: 'Illuminators' },
-    ]},
-    { label: 'ID Card Issuance', children: [
-      { label: 'ID Card Printers' }, { label: 'Badge Accessories' },
-    ]},
-  ],
-};
-
-
+let activeMenu = null;
 let activeL1 = null;
 let activeL2 = null;
 let closeTimer = null;
@@ -1754,15 +1274,19 @@ function renderL1(menuKey) {
     if (!c.classList.contains('col-heading')) c.remove();
   });
 
-  // ── SECTION 1: Featured slots (1–5) ─────────────────────────
-  const allSlots   = featuredItems[menuKey] || [];
-  const featured   = allSlots.slice(0, 5).filter(Boolean);
+  // ── SECTION 1: Featured (filled slots) ──────────────────────
+  const featured = (featuredItems[menuKey] || []).filter(Boolean);
   if (featured.length > 0) {
+    const lbl = document.createElement('div');
+    lbl.className = 'feat-section-label';
+    lbl.textContent = '★ Featured';
+    colCategories.appendChild(lbl);
+
     featured.forEach(feat => {
       const el = document.createElement('a');
       el.href = feat.type === 'url' ? feat.url : '#';
       el.className = 'cat-item featured-item' + (feat.children ? ' has-children' : '');
-      el.innerHTML = `<span>${feat.label}</span>${feat.children ? '<span class="chevron">▶</span>' : ''}`;
+      el.innerHTML = `<span>${feat.label}<span class="feat-star">FEATURED</span></span>${feat.children ? '<span class="chevron">▶</span>' : ''}`;
       el.addEventListener('mouseenter', () => {
         Array.from(colCategories.querySelectorAll('.cat-item')).forEach(x => x.classList.remove('active'));
         el.classList.add('active');
@@ -1777,31 +1301,33 @@ function renderL1(menuKey) {
     colCategories.appendChild(sep);
   }
 
-  // ── SECTION 2: Slots 6–30, merged with default categories ───
-  // Build the default category list (non-null, not already in featured slots 1-5)
+  // ── SECTION 2: Rest of categories ───────────────────────────
+  // Skip any category whose label is already in featured
   const featuredLabels = new Set(featured.map(f => f.label));
-  const defaultCats = data.categories
-    .filter(cat => cat && !featuredLabels.has(cat.label));
 
-  // For each of the 25 positions (slots 6–30), prefer the filled slot;
-  // fall back to the corresponding default category if the slot is empty.
-  for (let i = 0; i < 25; i++) {
-    const slotItem = allSlots[5 + i] || null;
-    const cat      = slotItem || defaultCats[i] || null;
-    if (!cat) continue;
-
+  data.categories.forEach((cat, i) => {
+    if (!cat) {
+      const d = document.createElement('div');
+      d.className = 'cat-divider';
+      colCategories.appendChild(d);
+      return;
+    }
+    // Dim (don't hide) items already featured so admin can see all items
     const el = document.createElement('a');
-    el.href = (cat.type === 'url' ? cat.url : null) || '#';
+    el.href = '#';
     el.className = 'cat-item' + (cat.children ? ' has-children' : '');
+    if (featuredLabels.has(cat.label)) el.style.opacity = '0.4';
+    el.dataset.index = i;
     el.innerHTML = `<span>${cat.label}</span>${cat.children ? '<span class="chevron">▶</span>' : ''}`;
     el.addEventListener('mouseenter', () => {
       Array.from(colCategories.querySelectorAll('.cat-item')).forEach(x => x.classList.remove('active'));
       el.classList.add('active');
+      activeL1 = i;
       if (cat.children) renderL2(cat);
       else { colSub.classList.remove('visible'); colTertiary.classList.remove('visible'); activeL2 = null; }
     });
     colCategories.appendChild(el);
-  }
+  });
 
   buildContextual(menuKey);
 }
@@ -1972,8 +1498,7 @@ adminCollapseBtn.addEventListener('click', () => {
 // ─── LOAD CATEGORY ───────────────────────────────────────────────────────────
 function loadCategory(catId) {
   const id = catId.trim();
-  const key = CATID_MAP[id] || (id.toLowerCase() === 'specials' ? 'specials' : null)
-           || (CHILD_CATS[id] ? CHILD_CATS[id].parentKey : null);
+  const key = CATID_MAP[id] || (id.toLowerCase() === 'specials' ? 'specials' : null);
   adminMsg.textContent = '';
 
   if (!key) {
@@ -1983,19 +1508,11 @@ function loadCategory(catId) {
     return;
   }
 
-  // If a child catId was entered, note the child name and load its parent menu
-  const childData = CHILD_CATS[id];
-  const isChild = !!childData && !CATID_MAP[id];
-
   adminCurrentKey = key;
   const data = MENUS[key];
   adminCatName.textContent = data.heading;
-  adminCatIdBadge.textContent = isChild
-    ? `CatID: ${id} (child of ${data.heading.replace(/^All /, '')})`
-    : `CatID: ${id}`;
-  adminMsg.innerHTML = isChild
-    ? `<span class="admin-hint">✓ Loaded parent: ${data.heading.replace(/^All /, '')}</span>`
-    : `<span class="admin-hint">✓ Loaded</span>`;
+  adminCatIdBadge.textContent = `CatID: ${id}`;
+  adminMsg.innerHTML = `<span class="admin-hint">✓ Loaded</span>`;
 
   // Update detail page link and remember last catId
   const detailLink = document.getElementById('adminDetailLink');
@@ -2020,21 +1537,12 @@ adminCatInput.addEventListener('keydown', e => {
 
 const adminTypeaheadDropdown = document.getElementById('adminTypeaheadDropdown');
 
-// Build a flat lookup list: [{id, key, name, parentName}]
-// Top-level entries have parentName: null; child entries carry the parent's display name.
-const CATEGORY_LIST = [
-  ...Object.entries(CATID_MAP).map(([id, key]) => ({
-    id, key,
-    name: MENUS[key].heading.replace(/^All /, '').replace(/^Current /, ''),
-    parentName: null,
-  })),
-  ...Object.entries(CHILD_CATS).map(([id, c]) => ({
-    id,
-    key: c.parentKey,
-    name: c.name,
-    parentName: MENUS[c.parentKey].heading.replace(/^All /, '').replace(/^Current /, ''),
-  })),
-];
+// Build a flat lookup list: [{id, key, name}]
+const CATEGORY_LIST = Object.entries(CATID_MAP).map(([id, key]) => ({
+  id,
+  key,
+  name: MENUS[key].heading.replace(/^All /, '').replace(/^Current /, '')
+}));
 
 let typeaheadFocusIdx = -1;
 
@@ -2077,19 +1585,11 @@ function renderTypeahead(query) {
     nameSpan.className = 'typeahead-item-name';
     nameSpan.innerHTML = highlightMatch(cat.name, query.trim());
 
-    item.appendChild(nameSpan);
-
-    if (cat.parentName) {
-      const parentSpan = document.createElement('span');
-      parentSpan.className = 'typeahead-item-parent';
-      parentSpan.textContent = cat.parentName;
-      item.appendChild(parentSpan);
-    }
-
     const idSpan = document.createElement('span');
     idSpan.className = 'typeahead-item-id';
     idSpan.innerHTML = 'CatID: ' + highlightMatch(cat.id, query.trim());
 
+    item.appendChild(nameSpan);
     item.appendChild(idSpan);
 
     item.addEventListener('mousedown', e => {
@@ -2156,24 +1656,9 @@ function renderAdminSlots(menuKey) {
   adminSlots.innerHTML = '';
   const slots = featuredItems[menuKey];
 
-  // ── Featured section header ───────────────────────────────
-  const featHdr = document.createElement('div');
-  featHdr.className = 'admin-slot-section-header';
-  featHdr.innerHTML = '★ Featured <span>Slots 1 – 5</span>';
-  adminSlots.appendChild(featHdr);
-
   slots.forEach((item, i) => {
-    // ── Non-featured section header before slot 6 ─────────
-    if (i === 5) {
-      const catHdr = document.createElement('div');
-      catHdr.className = 'admin-slot-section-header';
-      catHdr.innerHTML = '≡ Categories <span>Slots 6 – 30</span>';
-      adminSlots.appendChild(catHdr);
-    }
-
-    const isFeatured = i < 5;
     const row = document.createElement('div');
-    row.className = 'admin-slot-row' + (i === activeSlotIndex ? ' active' : '') + (isFeatured ? '' : ' non-featured');
+    row.className = 'admin-slot-row' + (i === activeSlotIndex ? ' active' : '');
     row.draggable = true;
     row.dataset.index = i;
 
@@ -2361,8 +1846,7 @@ adminTypeSelect.addEventListener('change', () => {
 // ─── LABEL LIST ──────────────────────────────────────────────────────────────
 function renderLabelList(menuKey, selectedLabel) {
   adminLabelList.innerHTML = '';
-  // Use curated section-header labels if available; fall back to full category list
-  const cats = MENU_LABELS[menuKey] || (MENUS[menuKey]?.categories || []).filter(Boolean);
+  const cats = (MENUS[menuKey]?.categories || []).filter(Boolean);
   const usedLabels = new Set(
     (featuredItems[menuKey] || [])
       .filter((s, i) => s && i !== activeSlotIndex)
@@ -2390,131 +1874,21 @@ function renderLabelList(menuKey, selectedLabel) {
   });
 }
 
-// ─── SLOT CATID TYPEAHEAD ─────────────────────────────────────────────────────
-
-const slotCatIdDropdown = document.getElementById('slotCatIdDropdown');
-let slotTypeaheadFocusIdx = -1;
-
-function renderSlotTypeahead(query) {
-  const q = query.trim().toLowerCase();
-  slotCatIdDropdown.innerHTML = '';
-  slotTypeaheadFocusIdx = -1;
-
-  if (!q) { closeSlotTypeahead(); return; }
-
-  const matches = CATEGORY_LIST.filter(c =>
-    c.id.includes(q) || c.name.toLowerCase().includes(q)
-  );
-
-  if (matches.length === 0) {
-    slotCatIdDropdown.innerHTML =
-      `<div class="typeahead-empty">No categories match "${query}"</div>`;
-    slotCatIdDropdown.classList.add('open');
-    return;
-  }
-
-  matches.forEach(cat => {
-    const item = document.createElement('div');
-    item.className = 'typeahead-item';
-    item.setAttribute('role', 'option');
-    item.dataset.id = cat.id;
-
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'typeahead-item-name';
-    nameSpan.innerHTML = highlightMatch(cat.name, query.trim());
-
-    item.appendChild(nameSpan);
-
-    if (cat.parentName) {
-      const parentSpan = document.createElement('span');
-      parentSpan.className = 'typeahead-item-parent';
-      parentSpan.textContent = cat.parentName;
-      item.appendChild(parentSpan);
-    }
-
-    const idSpan = document.createElement('span');
-    idSpan.className = 'typeahead-item-id';
-    idSpan.innerHTML = 'CatID: ' + highlightMatch(cat.id, query.trim());
-
-    item.appendChild(idSpan);
-
-    item.addEventListener('mousedown', e => e.preventDefault());
-    item.addEventListener('click', () => {
-      adminCatIdField.value = cat.id;
-      closeSlotTypeahead();
-      searchCatId();
-    });
-
-    slotCatIdDropdown.appendChild(item);
-  });
-
-  slotCatIdDropdown.classList.add('open');
-}
-
-function closeSlotTypeahead() {
-  slotCatIdDropdown.classList.remove('open');
-  slotTypeaheadFocusIdx = -1;
-}
-
-function moveSlotFocus(dir) {
-  const items = slotCatIdDropdown.querySelectorAll('.typeahead-item');
-  if (!items.length) return;
-  items[slotTypeaheadFocusIdx]?.classList.remove('focused');
-  slotTypeaheadFocusIdx = Math.max(0, Math.min(items.length - 1, slotTypeaheadFocusIdx + dir));
-  items[slotTypeaheadFocusIdx].classList.add('focused');
-  items[slotTypeaheadFocusIdx].scrollIntoView({ block: 'nearest' });
-}
-
-adminCatIdField.addEventListener('input', () => renderSlotTypeahead(adminCatIdField.value));
-
-adminCatIdField.addEventListener('focus', () => {
-  if (adminCatIdField.value.trim()) renderSlotTypeahead(adminCatIdField.value);
-});
-
-adminCatIdField.addEventListener('blur', () => {
-  setTimeout(closeSlotTypeahead, 150);
-});
-
 // ─── CATID SEARCH ────────────────────────────────────────────────────────────
 adminCatIdSearchBtn.addEventListener('click', searchCatId);
-adminCatIdField.addEventListener('keydown', e => {
-  const isOpen = slotCatIdDropdown.classList.contains('open');
-  if (e.key === 'ArrowDown') { e.preventDefault(); if (isOpen) moveSlotFocus(1); else renderSlotTypeahead(adminCatIdField.value); return; }
-  if (e.key === 'ArrowUp')   { e.preventDefault(); moveSlotFocus(-1); return; }
-  if (e.key === 'Escape')    { closeSlotTypeahead(); return; }
-  if (e.key === 'Enter') {
-    const focused = slotCatIdDropdown.querySelector('.typeahead-item.focused');
-    if (focused) {
-      adminCatIdField.value = focused.dataset.id;
-      closeSlotTypeahead();
-      searchCatId();
-      e.preventDefault();
-    } else {
-      closeSlotTypeahead();
-      searchCatId();
-    }
-  }
-});
+adminCatIdField.addEventListener('keydown', e => { if (e.key === 'Enter') searchCatId(); });
 
 function searchCatId() {
   const id = adminCatIdField.value.trim();
+  const key = CATID_MAP[id];
   adminCatIdResult.className = 'admin-catid-result';
   pendingCatIdItem = null;
   if (!id) { adminCatIdResult.textContent = ''; return; }
-
-  const topKey   = CATID_MAP[id];
-  const childData = CHILD_CATS[id];
-
-  if (topKey) {
-    const data = MENUS[topKey];
+  if (key) {
+    const data = MENUS[key];
     adminCatIdResult.textContent = `✓ Found: ${data.heading}`;
     adminCatIdResult.classList.add('visible');
     pendingCatIdItem = { type: 'catid', catId: id, label: data.heading.replace(/^All /, ''), children: data.categories.filter(Boolean) };
-  } else if (childData) {
-    const parentName = MENUS[childData.parentKey].heading.replace(/^All /, '');
-    adminCatIdResult.textContent = `✓ Found: ${childData.name} (${parentName})`;
-    adminCatIdResult.classList.add('visible');
-    pendingCatIdItem = { type: 'catid', catId: id, label: childData.name, children: [] };
   } else {
     adminCatIdResult.textContent = `✕ CatID "${id}" not found in this prototype`;
     adminCatIdResult.classList.add('visible', 'error');
