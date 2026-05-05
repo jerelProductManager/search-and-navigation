@@ -1022,7 +1022,16 @@ const MENUS = {
         { label: 'DSLR & Mirrorless Lenses' }, { label: 'Cinema Lenses' }, { label: 'Lens Adapters' }
       ]},
       { label: 'Photo Tripods & Support' },
-      { label: 'Photography Bags & Cases' },
+      { label: 'Photography Bags & Cases', children: [
+        { label: 'Shoulder Bags' }, { label: 'Backpacks' }, { label: 'Sling Bags' },
+        { label: 'Rolling Cases' }, { label: 'Fashion Camera Bags' }, { label: 'Holster Cases' },
+        { label: 'Waist Packs' }, { label: 'Totes & Carrying Bags' },
+        { label: 'Hard & Watertight Cases' }, { label: 'Waterproof Bags' },
+        { label: 'Pouches' }, { label: 'Lens Cases' },
+        null,
+        { label: 'DSLR & Mirrorless Fitted Cases' }, { label: 'Camera Straps & Harnesses' },
+        { label: 'Gear Protection' }, { label: 'Tripod Cases' }, { label: 'Bag & Case Accessories' },
+      ]},
       { label: 'Memory Cards & Accessories' },
       { label: 'Batteries & Power Accessories' },
       { label: 'Flashes & On Camera Lighting' },
@@ -1263,11 +1272,43 @@ const MENUS = {
 
 const CHILD_CATS = {
   // Photography
-  '9811':  { name: 'Digital Cameras',                    parentKey: 'photography' },
-  '15492': { name: 'Lenses',                             parentKey: 'photography' },
+  '9811':  { name: 'Digital Cameras', parentKey: 'photography', children: [
+    { label: 'DSLRs' }, { label: 'Mirrorless' }, { label: 'Medium Format' },
+    { label: 'Point & Shoot' }, { label: 'Film Cameras' },
+  ]},
+  '15492': { name: 'Lenses', parentKey: 'photography', children: [
+    { label: 'DSLR & Mirrorless Lenses' }, { label: 'Cinema Lenses' }, { label: 'Lens Adapters' },
+  ]},
   '9812':  { name: 'Film Cameras',                       parentKey: 'photography' },
   '8310':  { name: 'Photo Tripods & Support',            parentKey: 'photography' },
-  '167':   { name: 'Photography Bags & Cases',           parentKey: 'photography' },
+  '167':   { name: 'Photography Bags & Cases', parentKey: 'photography', children: [
+    { label: 'Shoulder Bags' }, { label: 'Backpacks' }, { label: 'Sling Bags' },
+    { label: 'Rolling Cases' }, { label: 'Fashion Camera Bags' }, { label: 'Holster Cases' },
+    { label: 'Waist Packs' }, { label: 'Totes & Carrying Bags' },
+    { label: 'Hard & Watertight Cases' }, { label: 'Waterproof Bags' },
+    { label: 'Pouches' }, { label: 'Lens Cases' },
+    null,
+    { label: 'DSLR & Mirrorless Fitted Cases' }, { label: 'Camera Straps & Harnesses' },
+    { label: 'Gear Protection' }, { label: 'Tripod Cases' }, { label: 'Bag & Case Accessories' },
+  ] },
+  // Photography Bags sub-children (CatID 167 children)
+  '174':   { name: 'Shoulder Bags',                  parentKey: 'photography' },
+  '176':   { name: 'Backpacks',                      parentKey: 'photography' },
+  '32677': { name: 'Sling Bags',                     parentKey: 'photography' },
+  '191':   { name: 'Rolling Cases',                  parentKey: 'photography' },
+  '21202': { name: 'Fashion Camera Bags',            parentKey: 'photography' },
+  '182':   { name: 'Holster Cases',                  parentKey: 'photography' },
+  '177':   { name: 'Waist Packs',                    parentKey: 'photography' },
+  '195':   { name: 'Totes & Carrying Bags',          parentKey: 'photography' },
+  '16460': { name: 'Hard & Watertight Cases',        parentKey: 'photography' },
+  '9437':  { name: 'Waterproof Bags',                parentKey: 'photography' },
+  '2603':  { name: 'Pouches',                        parentKey: 'photography' },
+  '4529':  { name: 'Lens Cases',                     parentKey: 'photography' },
+  '173':   { name: 'DSLR & Mirrorless Fitted Cases', parentKey: 'photography' },
+  '31261': { name: 'Camera Straps & Harnesses',      parentKey: 'photography' },
+  '2604':  { name: 'Gear Protection',                parentKey: 'photography' },
+  '193':   { name: 'Tripod Cases',                   parentKey: 'photography' },
+  '234':   { name: 'Bag & Case Accessories',         parentKey: 'photography' },
   '6231':  { name: 'Memory Cards & Accessories',         parentKey: 'photography' },
   '9818':  { name: 'Batteries & Power Accessories',      parentKey: 'photography' },
   '18316': { name: 'Flashes & On Camera Lighting',       parentKey: 'photography' },
@@ -1499,10 +1540,26 @@ const CHILD_CATS = {
 const MENU_LABELS = {
   photography: [
     { label: 'Cameras & Lenses', children: [
-      { label: 'Digital Cameras' }, { label: 'Lenses' }, { label: 'Film Cameras' },
+      { label: 'Digital Cameras', children: [
+        { label: 'DSLRs' }, { label: 'Mirrorless' }, { label: 'Medium Format' },
+        { label: 'Point & Shoot' }, { label: 'Film Cameras' },
+      ]},
+      { label: 'Lenses', children: [
+        { label: 'DSLR & Mirrorless Lenses' }, { label: 'Cinema Lenses' }, { label: 'Lens Adapters' },
+      ]},
+      { label: 'Film Cameras' },
     ]},
     { label: 'Accessories', children: [
-      { label: 'Photo Tripods & Support' }, { label: 'Photography Bags & Cases' },
+      { label: 'Photo Tripods & Support' }, { label: 'Photography Bags & Cases', children: [
+        { label: 'Shoulder Bags' }, { label: 'Backpacks' }, { label: 'Sling Bags' },
+        { label: 'Rolling Cases' }, { label: 'Fashion Camera Bags' }, { label: 'Holster Cases' },
+        { label: 'Waist Packs' }, { label: 'Totes & Carrying Bags' },
+        { label: 'Hard & Watertight Cases' }, { label: 'Waterproof Bags' },
+        { label: 'Pouches' }, { label: 'Lens Cases' },
+        null,
+        { label: 'DSLR & Mirrorless Fitted Cases' }, { label: 'Camera Straps & Harnesses' },
+        { label: 'Gear Protection' }, { label: 'Tripod Cases' }, { label: 'Bag & Case Accessories' },
+      ] },
       { label: 'Memory Cards & Accessories' }, { label: 'Batteries & Power Accessories' },
       { label: 'Flashes & On Camera Lighting' }, { label: 'Lens Filters' },
       { label: 'Lens Accessories' }, { label: 'Photo Accessories' },
@@ -2515,7 +2572,7 @@ function searchCatId() {
     const parentName = MENUS[childData.parentKey].heading.replace(/^All /, '');
     adminCatIdResult.textContent = `✓ Found: ${childData.name} (${parentName})`;
     adminCatIdResult.classList.add('visible');
-    pendingCatIdItem = { type: 'catid', catId: id, label: childData.name, children: [] };
+    pendingCatIdItem = { type: 'catid', catId: id, label: childData.name, children: childData.children || [] };
   } else {
     adminCatIdResult.textContent = `✕ CatID "${id}" not found in this prototype`;
     adminCatIdResult.classList.add('visible', 'error');
