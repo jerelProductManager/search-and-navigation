@@ -1,0 +1,42 @@
+Category Detail Page — User Stories
+
+Managing Featured Slots
+	•	As an admin, I can see 30 slots in the Featured Slots panel, divided into a Featured section (slots 1–5) and a Non-Featured section (slots 6–30), so that I know which slots control the mega menu’s two sections
+	•	As an admin, I can click Add+ on any empty slot to open the slot editor modal so that I can assign content to that position
+	•	As an admin, I can click Edit on a filled slot to modify its existing content so that I can correct or update featured items without removing and re-adding them
+	•	As an admin, I can click Remove on a filled slot to clear it so that I can remove a featured item without affecting other slots
+	•	As an admin, I can see each filled slot’s label and type badge (label / url / catid) in the slot list so that I can understand the composition of the featured section at a glance
+Add/Edit Slot Modal
+	•	As an admin, when I open the slot editor I can choose from three content types — Label, Custom URL, or CatID — so that I have flexibility in what appears as a featured item
+	•	As an admin, when I select Label I see a scrollable list of the category’s blue group headers so that I can pin an existing navigation group to a featured position
+	•	As an admin, when I select Custom URL I see a URL field and a Display Label field so that I can link to any destination with custom display text
+	•	As an admin, when I select CatID I see a typeahead search field so that I can find and assign any category by ID or name
+	•	As an admin, the CatID typeahead searches both top-level nav categories and all child categories so that I can promote a lower-level category (e.g. Solar Observing under Optics) to a featured slot using its name or CatId
+	•	As an admin, when I type a partial CatID or name the matching portion is highlighted in yellow in the dropdown so that I can confirm the match at a glance
+	•	As an admin, the Save button is disabled until I have made a valid and complete selection so that I cannot accidentally save an incomplete slot
+	•	As an admin, after saving a slot the modal closes automatically so that I can continue working without an extra click
+	•	As an admin, I can close the modal by clicking Cancel, the ✕ button, clicking the backdrop, or pressing Escape so that I have multiple natural ways to dismiss it
+Drag and Drop Sequencing
+	•	As an admin, I can drag any slot row by its grip handle to reorder it within the slot list so that I can control the display order of featured and non-featured items
+	•	As an admin, I see a green indicator line while dragging to show where the item will be dropped so that I can place it precisely
+	•	As an admin, when I drop a slot the reordering is saved immediately and reflected in the mega menu so that I don’t need a separate save step for sequencing changes
+Promoting Lower-Level Categories
+	•	As an admin, I can assign a child category’s CatID (e.g. Digital Cameras: 9811) to any slot so that a sub-category can appear at the top level of the mega menu for its parent
+	•	As an admin, child category IDs are searchable by name or ID in the slot editor typeahead so that I don’t need to look up IDs separately
+	•	As an admin, when a child category is saved to a slot its internal prefix (e.g. “PHOTO-”) is stripped from the display label so that it appears cleanly in the customer-facing menu
+	•	As an admin, a category assigned via CatID and populated with children will expand to show those children on hover in the mega menu, just like a native category
+Mega Menu Sync
+	<--! •	As an admin, changes I make to slots on the Category Detail page are reflected immediately in the Nav Preview mega menu so that I can verify the customer-facing result without switching tools -->
+	•	As an admin, items assigned to slots 1–5 appear in the Featured section of that category's mega menu so that they are visually prioritized for customers
+	•	As an admin, items assigned to slots 6–30 appear in the Non-Featured section, and items already in the Featured section are suppressed from appearing again below it so that there is no duplication
+	•	As an admin, subcategories that have not been assigned to any slot appear in the lower section in their default sequence as fallback content so that the menu is never empty
+
+The Specials link is contextual based on the category. For example, the Specials link under Photography leads to https://www.bhphotovideo.com/deals-promotions-coupons/Photography/ci/989/N/4294538916
+
+The New link is contextual based on the category. For example, the New link under Photography leads to (the photography category url from the new item page created using permalink).
+
+The Used link is contextual based on the category. For example, the Used link under Photography leads to the Used Photography Category linked in the DES
+
+The Finder link is populated using a custom url field with a label field for customer facing text.
+
+The Explora link is populated using the ????
