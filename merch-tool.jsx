@@ -701,76 +701,81 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
           {(() => {
             const catName = cat.heading;
             const bgUrl = cur?.buyingGuideUrl || "";
-            const utilItems = [
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/><path d="M12 2L6 8"/></svg>,
-                label: "Specials in",
-                highlight: catName,
-                url: null,
-              },
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="2"/><path d="M8 14h.01M16 14h.01"/></svg>,
-                label: "Used Pro",
-                highlight: catName,
-                url: null,
-              },
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-                label: "New in",
-                highlight: catName,
-                url: null,
-              },
-            ];
-            const toolItems = [
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
-                label: `Find The Perfect ${catName} Cable`,
-                url: null,
-              },
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-                label: `${catName} Buying Guide`,
-                url: bgUrl,
-                configurable: true,
-              },
-            ];
+            const rowStyle = { padding: "8px 14px", display: "flex", alignItems: "center", gap: 10,
+              cursor: "pointer", borderLeft: "3px solid transparent", transition: "all 0.1s" };
+            const onHoverIn  = e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.borderLeftColor = "#3f9a59"; };
+            const onHoverOut = e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderLeftColor = "transparent"; };
+            const SvgWrap = ({ children }) => (
+              <span style={{ flexShrink: 0, display: "flex", alignItems: "center", width: 20 }}>{children}</span>
+            );
             return (
               <div style={{ width: 220, flexShrink: 0, borderLeft: "1px solid #e5e7eb", padding: "16px 0", background: "#fafafa", overflowY: "auto" }}>
                 <div style={{ padding: "0 14px 10px", borderBottom: "2px solid #3f9a59", marginBottom: 4 }}>
-                  <span style={{ fontWeight: 800, fontSize: 12, color: "#111827" }}>Shop &amp; Learn</span>
+                  <span style={{ fontWeight: 800, fontSize: 12, color: "#111827" }}>Shop {"&"} Learn</span>
                 </div>
-                {utilItems.map((item, i) => (
-                  <div key={i} style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
-                    borderLeft: "3px solid transparent", transition: "all 0.1s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.borderLeftColor = "#3f9a59"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderLeftColor = "transparent"; }}>
-                    <span style={{ flexShrink: 0, display:"flex", alignItems:"center" }}>{item.icon}</span>
-                    <span style={{ fontSize: 13, color: "#1f2937", lineHeight: 1.35 }}>
-                      {item.label} <strong>{item.highlight}</strong>
-                    </span>
-                  </div>
-                ))}
+
+                {/* Specials */}
+                <div style={rowStyle} onMouseEnter={onHoverIn} onMouseLeave={onHoverOut}>
+                  <SvgWrap>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                      <line x1="7" y1="7" x2="7.01" y2="7"/>
+                    </svg>
+                  </SvgWrap>
+                  <span style={{ fontSize: 13, color: "#1f2937" }}>Specials in <strong>{catName}</strong></span>
+                </div>
+
+                {/* Used Pro */}
+                <div style={rowStyle} onMouseEnter={onHoverIn} onMouseLeave={onHoverOut}>
+                  <SvgWrap>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="5" width="20" height="14" rx="2"/>
+                      <line x1="2" y1="10" x2="22" y2="10"/>
+                    </svg>
+                  </SvgWrap>
+                  <span style={{ fontSize: 13, color: "#1f2937" }}>Used Pro <strong>{catName}</strong></span>
+                </div>
+
+                {/* New in */}
+                <div style={rowStyle} onMouseEnter={onHoverIn} onMouseLeave={onHoverOut}>
+                  <SvgWrap>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 8 12 12 14 14"/>
+                    </svg>
+                  </SvgWrap>
+                  <span style={{ fontSize: 13, color: "#1f2937" }}>New in <strong>{catName}</strong></span>
+                </div>
 
                 <div style={{ margin: "8px 14px", borderTop: "1px dashed #d1d5db" }} />
 
-                {toolItems.map((item, i) => (
-                  <div key={i} style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
-                    borderLeft: "3px solid transparent", transition: "all 0.1s",
-                    opacity: item.configurable && !item.url ? 0.5 : 1 }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.borderLeftColor = "#3f9a59"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderLeftColor = "transparent"; }}>
-                    <span style={{ flexShrink: 0, display:"flex", alignItems:"center" }}>{item.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 13, color: "#1f2937", lineHeight: 1.35 }}>{item.label}</span>
-                      {item.configurable && item.url && (
-                        <div style={{ fontSize: 10, color: "#3b82f6", marginTop: 2 }}>bhphotovideo.com/explora →</div>
-                      )}
-                      {item.configurable && !item.url && (
-                        <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 2 }}>⚠ No URL set — configure in Admin</div>
-                      )}
-                    </div>
+                {/* Find Cable */}
+                <div style={rowStyle} onMouseEnter={onHoverIn} onMouseLeave={onHoverOut}>
+                  <SvgWrap>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                  </SvgWrap>
+                  <span style={{ fontSize: 13, color: "#1f2937" }}>Find The Perfect <strong>{catName}</strong> Cable</span>
+                </div>
+
+                {/* Buying Guide */}
+                <div style={{ ...rowStyle, opacity: bgUrl ? 1 : 0.5 }} onMouseEnter={onHoverIn} onMouseLeave={onHoverOut}>
+                  <SvgWrap>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                  </SvgWrap>
+                  <div>
+                    <div style={{ fontSize: 13, color: "#1f2937" }}><strong>{catName}</strong> Buying Guide</div>
+                    {bgUrl
+                      ? <div style={{ fontSize: 10, color: "#3b82f6", marginTop: 2 }}>bhphotovideo.com/explora →</div>
+                      : <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 2 }}>⚠ No URL — set in Admin</div>
+                    }
                   </div>
-                ))}
+                </div>
               </div>
             );
           })()}
@@ -1451,6 +1456,8 @@ export default function App() {
             );
           })()}
         </div>
+        )} {/* end admin ternary */}
+      </div>
 
       {/* ── TAXONOMY PANEL ───────────────────────────────────── */}
       <aside className="flex flex-col flex-shrink-0 overflow-hidden"
