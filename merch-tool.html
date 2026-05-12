@@ -358,10 +358,19 @@ function findNodeById(cat, catId) {
 function MegaMenuPreview({ activeCat, catData, taxonomy }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
   const [previewCat, setPreviewCat] = useState(activeCat);
+  const clearTimer = useRef(null);
 
   // Sync preview cat when admin switches category
   const [prevActiveCat, setPrevActiveCat] = useState(activeCat);
   if (activeCat !== prevActiveCat) { setPrevActiveCat(activeCat); setPreviewCat(activeCat); setHoveredIdx(null); }
+
+  // Delayed clear — gives the mouse time to travel from left col into the flyout col
+  const scheduleHoverClear = () => {
+    clearTimer.current = setTimeout(() => setHoveredIdx(null), 120);
+  };
+  const cancelHoverClear = () => {
+    if (clearTimer.current) clearTimeout(clearTimer.current);
+  };
 
   const cat = taxonomy[previewCat];
   const cur = catData[previewCat];
@@ -369,18 +378,35 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
   const featuredSlots = slots.slice(0, 5).filter(Boolean);
   const linkSlots = slots.slice(5).filter(Boolean);
 
-  // Find children of the hovered slot (featured OR link) for the flyout column
+  // Resolve hovered slot from either featured or link section
   const hoveredSlot = hoveredIdx !== null
     ? (typeof hoveredIdx === "string" && hoveredIdx.startsWith("feat-")
         ? featuredSlots[parseInt(hoveredIdx.replace("feat-", ""), 10)]
         : linkSlots[hoveredIdx])
     : null;
+
+  // For taxonomy-node slots: find their children in the taxonomy tree
   const hoveredNode = hoveredSlot && !hoveredSlot.catId?.startsWith("lbl:")
     ? findNodeById(cat, hoveredSlot.catId) : null;
   const flyoutChildren = hoveredNode?.children?.length ? hoveredNode.children : [];
 
-  // Split link slots into labels vs links
-  // Build columns: gather items between label dividers
+  // For label slots: collect the non-label items that follow until the next label
+  const labelSectionItems = (() => {
+    if (!hoveredSlot || !hoveredSlot.catId?.startsWith("lbl:")) return [];
+    const idx = typeof hoveredIdx === "number" ? hoveredIdx : -1;
+    if (idx === -1) return [];
+    const items = [];
+    for (let j = idx + 1; j < linkSlots.length; j++) {
+      if (linkSlots[j].level === "label") break;
+      items.push(linkSlots[j]);
+    }
+    return items;
+  })();
+
+  // Determine what the flyout column should show
+  const showFlyout = flyoutChildren.length > 0 || labelSectionItems.length > 0;
+
+  // Build default display columns from non-hovered state
   const sections = [];
   let currentSection = { label: null, items: [] };
   for (const s of linkSlots) {
@@ -393,7 +419,6 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
   }
   if (currentSection.items.length || currentSection.label) sections.push(currentSection);
 
-  // Distribute sections into up to 3 display columns (try to balance)
   const MAX_COLS = 3;
   const cols = Array.from({ length: MAX_COLS }, () => []);
   let colIdx = 0;
@@ -447,7 +472,6 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
 
           {/* Left navigation column */}
           <div style={{ width: 220, flexShrink: 0, borderRight: "1px solid #e5e7eb", padding: "16px 0" }}>
-            {/* "All [Category]" header + first green divider */}
             <div style={{ padding: "0 16px 10px" }}>
               <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>All {cat.heading}</span>
             </div>
@@ -459,8 +483,8 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
                 const isHovered = hoveredIdx === `feat-${i}`;
                 return (
                   <div key={i}
-                    onMouseEnter={() => setHoveredIdx(`feat-${i}`)}
-                    onMouseLeave={() => setHoveredIdx(null)}
+                    onMouseEnter={() => { cancelHoverClear(); setHoveredIdx(`feat-${i}`); }}
+                    onMouseLeave={scheduleHoverClear}
                     style={{
                       padding: "5px 16px", fontSize: 13, cursor: "pointer",
                       color: isHovered ? "#3f9a59" : "#1f2937",
@@ -470,6 +494,8 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
                       transition: "all 0.1s"
                     }}>
                     <span>{slot.label}</span>
+                    {isHovered && (flyoutChildren.length > 0 || labelSectionItems.length > 0) &&
+                      <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>}
                   </div>
                 );
               })
@@ -479,7 +505,6 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
               </div>
             )}
 
-            {/* Second green divider */}
             <div style={{ height: 2, background: "#3f9a59", margin: "8px 0" }} />
 
             {/* Link slots 6–30 */}
@@ -491,52 +516,79 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
               ) : linkSlots.map((slot, i) => {
                 const isLabel = slot.level === "label";
                 const isHovered = hoveredIdx === i;
-                if (isLabel) return (
-                  <div key={i} style={{
-                    padding: "8px 16px 4px", fontSize: 10, fontWeight: 800, color: "#6b7280",
-                    letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 4
-                  }}>{slot.label}</div>
-                );
+                // Labels are hoverable too — they show their section items in column 2
                 return (
                   <div key={i}
-                    onMouseEnter={() => setHoveredIdx(i)}
-                    onMouseLeave={() => setHoveredIdx(null)}
+                    onMouseEnter={() => { cancelHoverClear(); setHoveredIdx(i); }}
+                    onMouseLeave={scheduleHoverClear}
                     style={{
-                      padding: "5px 16px", fontSize: 13, cursor: "pointer",
-                      color: isHovered ? "#3f9a59" : "#1f2937",
+                      padding: isLabel ? "8px 16px 4px" : "5px 16px",
+                      fontSize: isLabel ? 10 : 13,
+                      fontWeight: isLabel ? 800 : 400,
+                      color: isLabel
+                        ? (isHovered ? "#3f9a59" : "#6b7280")
+                        : (isHovered ? "#3f9a59" : "#1f2937"),
+                      letterSpacing: isLabel ? "0.08em" : "normal",
+                      textTransform: isLabel ? "uppercase" : "none",
+                      marginTop: isLabel ? 4 : 0,
+                      cursor: "pointer",
                       background: isHovered ? "#f0fdf4" : "transparent",
-                      borderLeft: isHovered ? "3px solid #3f9a59" : "3px solid transparent",
+                      borderLeft: (!isLabel && isHovered) ? "3px solid #3f9a59" : "3px solid transparent",
                       display: "flex", alignItems: "center", justifyContent: "space-between",
                       transition: "all 0.1s"
                     }}>
                     <span>{slot.label}</span>
-                    {hoveredNode?.catId === slot.catId && flyoutChildren.length > 0 &&
-                      <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>}
+                    {isHovered && (flyoutChildren.length > 0 || labelSectionItems.length > 0) &&
+                      <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 400, textTransform: "none", letterSpacing: "normal" }}>▸</span>}
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Middle content columns */}
-          <div style={{ flex: 1, display: "flex", padding: "16px 0", overflowX: "auto" }}>
-            {hoveredNode && flyoutChildren.length > 0 ? (
-              // Flyout: show hovered item's taxonomy children
+          {/* Middle content columns — stays visible while mouse travels over it */}
+          <div
+            onMouseEnter={cancelHoverClear}
+            onMouseLeave={scheduleHoverClear}
+            style={{ flex: 1, display: "flex", padding: "16px 0", overflowX: "auto" }}>
+            {showFlyout ? (
+              // Flyout: taxonomy children OR label section items
               <div style={{ minWidth: 220, maxWidth: 280, padding: "0 20px", borderRight: "1px solid #f3f4f6" }}>
-                <div style={{ paddingBottom: 10, borderBottom: "2px solid #3f9a59", marginBottom: 10 }}>
-                  <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>All {hoveredNode.label}</span>
-                </div>
-                {flyoutChildren.map((child, i) => (
-                  <div key={i} style={{ padding: "4px 0", fontSize: 13, color: "#374151", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 6 }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
-                    onMouseLeave={e => e.currentTarget.style.color = "#374151"}>
-                    {child.label}
-                    {child.children?.length > 0 && (
-                      <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>
-                    )}
-                  </div>
-                ))}
+                {hoveredNode ? (
+                  <>
+                    <div style={{ paddingBottom: 10, borderBottom: "2px solid #3f9a59", marginBottom: 10 }}>
+                      <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>All {hoveredNode.label}</span>
+                    </div>
+                    {flyoutChildren.map((child, i) => (
+                      <div key={i} style={{ padding: "4px 0", fontSize: 13, color: "#374151", cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 6 }}
+                        onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
+                        onMouseLeave={e => e.currentTarget.style.color = "#374151"}>
+                        {child.label}
+                        {child.children?.length > 0 && <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>}
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  // Label section items
+                  <>
+                    <div style={{ paddingBottom: 10, borderBottom: "2px solid #3f9a59", marginBottom: 10 }}>
+                      <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>{hoveredSlot?.label}</span>
+                    </div>
+                    {labelSectionItems.map((item, i) => {
+                      const node = findNodeById(cat, item.catId);
+                      return (
+                        <div key={i} style={{ padding: "4px 0", fontSize: 13, color: "#374151", cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 6 }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#374151"}>
+                          {item.label}
+                          {node?.children?.length > 0 && <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             ) : activeCols.length > 0 ? (
               // Default: show configured sections in columns
@@ -547,9 +599,7 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
                     <div key={si} style={{ marginBottom: 16 }}>
                       {sec.label && (
                         <div style={{ paddingBottom: 8, marginBottom: 8, borderBottom: "2px solid #3f9a59" }}>
-                          <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>
-                            All {sec.label}
-                          </span>
+                          <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>All {sec.label}</span>
                         </div>
                       )}
                       {sec.items.map((item, ii) => (
@@ -565,7 +615,7 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
               ))
             ) : (
               <div style={{ padding: "24px 20px", fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>
-                Add items to Mega Menu Links (slots 6–30) to see them here
+                Add items to Non-featured Categories (slots 6–30) to see them here
               </div>
             )}
           </div>
@@ -581,8 +631,7 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                       <span style={{ color: "#3f9a59", fontSize: 14, flexShrink: 0, marginTop: 1 }}>◈</span>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", cursor: "pointer",
-                          lineHeight: 1.4 }}
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", cursor: "pointer", lineHeight: 1.4 }}
                           onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
                           onMouseLeave={e => e.currentTarget.style.color = "#111827"}>
                           {slot.label}
@@ -990,7 +1039,7 @@ function App() {
                 background:featCount===5?"#f59e0b":"#fef3c7", color:featCount===5?"white":"#92400e",
                 padding:"2px 8px", borderRadius:20 }}>{featCount}/5</span>
             </div>
-            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4 }}>
+            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4, maxHeight:220, overflowY:"auto" }}>
               {curSlots.slice(0, 5).map((slot, i) =>
                 slot ? (
                   <SlotRow key={i} slot={slot} slotNum={i+1} isFeatured
@@ -1010,17 +1059,17 @@ function App() {
             </div>
           </div>
 
-          {/* ≡ Mega Menu Links */}
+          {/* ≡ Non-featured Categories */}
           <div style={{ background:"white", borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
             <div style={{ background:"#f9fafb", borderBottom:"1px solid #e5e7eb",
               padding:"8px 16px", display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontWeight:800, fontSize:12, color:"#374151" }}>≡ Mega Menu Links</span>
+              <span style={{ fontWeight:800, fontSize:12, color:"#374151" }}>≡ Non-featured Categories</span>
               <span style={{ fontSize:11, color:"#9ca3af" }}>Slots 6–30 · promote any taxonomy level</span>
               <span style={{ marginLeft:"auto", fontSize:11, fontWeight:700,
                 background:linkCount>0?"#3b82f6":"#f3f4f6", color:linkCount>0?"white":"#9ca3af",
                 padding:"2px 8px", borderRadius:20 }}>{linkCount}/25</span>
             </div>
-            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4 }}>
+            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4, maxHeight:480, overflowY:"auto" }}>
               {curSlots.slice(5).map((slot, i) =>
                 slot ? (
                   <SlotRow key={i} slot={slot} slotNum={i+6} isFeatured={false}
