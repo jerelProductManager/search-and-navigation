@@ -382,25 +382,48 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
   const col1Node = hoveredSlot && !hoveredSlot.catId?.startsWith("lbl:")
     ? findNodeById(cat, hoveredSlot.catId) : null;
 
-  // For label slots: the items in that section become col2
+  // Build a catId → L2 node lookup once, used in multiple places below
+  const l2ByIds = Object.fromEntries(cat.children.map(c => [c.catId, c]));
+
+  // For label slots: collect col2 items via two strategies
   const labelSectionItems = (() => {
-    if (!hoveredSlot || !hoveredSlot.catId?.startsWith("lbl:")) return [];
-    const idx = typeof hoveredIdx === "number" ? hoveredIdx : -1;
-    if (idx === -1) return [];
-    const items = [];
-    for (let j = idx + 1; j < linkSlots.length; j++) {
-      if (linkSlots[j].level === "label") break;
-      items.push(linkSlots[j]);
+    if (!hoveredSlot?.catId?.startsWith("lbl:")) return [];
+
+    // Strategy 1 (preferred): GROUPS config match — semantically authoritative
+    const labelText = (hoveredSlot.label || "").toLowerCase().trim();
+    const groupDefs  = GROUPS[previewCat] || [];
+    const match = groupDefs.find(g =>
+      g.label != null && g.label.toLowerCase().trim() === labelText
+    );
+    if (match) {
+      return match.catIds.map(id => l2ByIds[id]).filter(Boolean);
     }
-    return items;
+
+    // Strategy 2 (fallback): slot items directly after this label in linkSlots
+    // Used for custom labels that don't match any GROUPS entry
+    if (typeof hoveredIdx === "number") {
+      const slotItems = [];
+      for (let j = hoveredIdx + 1; j < linkSlots.length; j++) {
+        if (linkSlots[j].level === "label") break;
+        slotItems.push(linkSlots[j]);
+      }
+      return slotItems;
+    }
+
+    return [];
   })();
 
-  // ── col2Items: always normalized to {label, catId, children[]} ─────────────
+  // ── col2Items: always {label, catId, children[]} ──────────────────────────
   const col2Items = (() => {
-    if (col1Node?.children?.length) return col1Node.children; // taxonomy children
-    return labelSectionItems.map(s => {   // label section → enrich with taxonomy children
-      const node = findNodeById(cat, s.catId);
-      return { label: s.label, catId: s.catId, children: node?.children || [] };
+    if (col1Node?.children?.length) return col1Node.children;
+    if (!labelSectionItems.length)   return [];
+    return labelSectionItems.map(s => {
+      // Items may be full taxonomy nodes (GROUPS path, already have .children)
+      // or slot stubs (slot path, need findNodeById for children)
+      const children = s.children?.length
+        ? s.children
+        : (l2ByIds[s.catId]?.children || findNodeById(cat, s.catId)?.children || []);
+      return { label: s.label, catId: s.catId, children };
     });
   })();
 
@@ -455,7 +478,7 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
               background: isH ? "#f0fdf4" : "transparent",
               transition: "all 0.08s" }}>
             <span>{item.label}</span>
-            {hasKids && <span style={{ fontSize: 10, color: isH ? "#3f9a59" : "#9ca3af", flexShrink: 0 }}>▸</span>}
+            {hasKids && <span style={{ fontSize: 14, fontWeight: 600, color: isH ? "#3f9a59" : "#9ca3af", flexShrink: 0, lineHeight: 1 }}>›</span>}
           </div>
         );
       })}
@@ -515,7 +538,7 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
                     borderLeft: isH ? "3px solid #3f9a59" : "3px solid transparent",
                     display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.1s" }}>
                   <span>{slot.label}</span>
-                  {isH && node?.children?.length > 0 && <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>}
+                  {isH && node?.children?.length > 0 && <span style={{ fontSize: 14, fontWeight: 600, color: "#9ca3af", lineHeight: 1 }}>›</span>}
                 </div>
               );
             }) : (
@@ -535,17 +558,14 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
                 const node = !isLabel ? findNodeById(cat, slot.catId) : null;
                 return (
                   <div key={i} onMouseEnter={() => enterCol1(i)} onMouseLeave={scheduleHoverClear}
-                    style={{ padding: isLabel ? "8px 16px 4px" : "5px 16px",
-                      fontSize: isLabel ? 10 : 13, fontWeight: isLabel ? 800 : 400,
-                      color: isLabel ? (isH ? "#3f9a59" : "#6b7280") : (isH ? "#3f9a59" : "#1f2937"),
-                      letterSpacing: isLabel ? "0.08em" : "normal",
-                      textTransform: isLabel ? "uppercase" : "none", marginTop: isLabel ? 4 : 0,
+                    style={{ padding: "5px 16px", fontSize: 13, fontWeight: 400,
+                      color: isH ? "#3f9a59" : "#1f2937",
                       cursor: "pointer", background: isH ? "#f0fdf4" : "transparent",
-                      borderLeft: (!isLabel && isH) ? "3px solid #3f9a59" : "3px solid transparent",
+                      borderLeft: isH ? "3px solid #3f9a59" : "3px solid transparent",
                       display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.1s" }}>
                     <span>{slot.label}</span>
                     {isH && (node?.children?.length > 0 || isLabel) &&
-                      <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 400, textTransform: "none", letterSpacing: "normal" }}>▸</span>}
+                      <span style={{ fontSize: 14, color: "#9ca3af", lineHeight: 1 }}>›</span>}
                   </div>
                 );
               })}
