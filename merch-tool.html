@@ -694,41 +694,6 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
             )}
           </div>
 
-          {/* ── Right: Featured column ── */}
-          <div style={{ width: 210, flexShrink: 0, borderLeft: "1px solid #e5e7eb", padding: "16px 0", background: "#fafafa" }}>
-            {featuredSlots.length > 0 ? (
-              <>
-                {featuredSlots.map((slot, i) => (
-                  <div key={i} style={{ padding: "8px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", flexDirection: "column", gap: 3 }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                      <span style={{ color: "#3f9a59", fontSize: 14, flexShrink: 0, marginTop: 1 }}>◈</span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", cursor: "pointer", lineHeight: 1.4 }}
-                          onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
-                          onMouseLeave={e => e.currentTarget.style.color = "#111827"}>
-                          {slot.label}
-                        </div>
-                        {slot.explorerUrl && (
-                          <div style={{ fontSize: 11, color: "#3b82f6", marginTop: 2, cursor: "pointer" }}>Explora article →</div>
-                        )}
-                        <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, fontFamily: "monospace" }}>ID {slot.catId}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {featuredSlots.length < 5 && (
-                  <div style={{ padding: "8px 16px", fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>
-                    {5 - featuredSlots.length} featured slot{5 - featuredSlots.length > 1 ? "s" : ""} empty
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ padding: "16px", fontSize: 12, color: "#d1d5db", fontStyle: "italic", lineHeight: 1.6 }}>
-                Add items to Featured slots (1–5) to populate this column
-              </div>
-            )}
-          </div>
-
           {/* ── Utility Column ── */}
           {(() => {
             const catName = cat.heading;
@@ -742,10 +707,6 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
             );
             return (
               <div style={{ width: 220, flexShrink: 0, borderLeft: "1px solid #e5e7eb", padding: "16px 0", background: "#fafafa", overflowY: "auto" }}>
-                <div style={{ padding: "0 14px 10px", borderBottom: "2px solid #3f9a59", marginBottom: 4 }}>
-                  <span style={{ fontWeight: 800, fontSize: 12, color: "#111827" }}>Shop {"&"} Learn</span>
-                </div>
-
                 {/* Specials */}
                 <div style={rowStyle} onMouseEnter={onHoverIn} onMouseLeave={onHoverOut}>
                   <SvgWrap>
@@ -802,10 +763,6 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
                   </SvgWrap>
                   <div>
                     <div style={{ fontSize: 13, color: "#1f2937" }}><strong>{catName}</strong> Buying Guide</div>
-                    {bgUrl
-                      ? <div style={{ fontSize: 10, color: "#3b82f6", marginTop: 2 }}>bhphotovideo.com/explora →</div>
-                      : <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 2 }}>⚠ No URL — set in Admin</div>
-                    }
                   </div>
                 </div>
               </div>
