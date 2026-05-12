@@ -315,6 +315,337 @@ function EmptySlot({ slotNum, isFeatured, onDragOver, onDrop, isDragOver }) {
   );
 }
 
+// ─── TAXONOMY LOOKUP ─────────────────────────────────────────────────────────
+function findNodeById(cat, catId) {
+  function search(nodes) {
+    for (const n of nodes) {
+      if (n.catId === catId) return n;
+      if (n.children?.length) { const found = search(n.children); if (found) return found; }
+    }
+    return null;
+  }
+  return search(cat.children);
+}
+
+// ─── MEGA MENU PREVIEW ───────────────────────────────────────────────────────
+function MegaMenuPreview({ activeCat, catData, taxonomy }) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [previewCat, setPreviewCat] = useState(activeCat);
+  const clearTimer = useRef(null);
+
+  // Sync preview cat when admin switches category
+  const [prevActiveCat, setPrevActiveCat] = useState(activeCat);
+  if (activeCat !== prevActiveCat) { setPrevActiveCat(activeCat); setPreviewCat(activeCat); setHoveredIdx(null); }
+
+  // Delayed clear — gives the mouse time to travel from left col into the flyout col
+  const scheduleHoverClear = () => {
+    clearTimer.current = setTimeout(() => setHoveredIdx(null), 120);
+  };
+  const cancelHoverClear = () => {
+    if (clearTimer.current) clearTimeout(clearTimer.current);
+  };
+
+  const cat = taxonomy[previewCat];
+  const cur = catData[previewCat];
+  const slots = cur?.slots || emptySlots();
+  const featuredSlots = slots.slice(0, 5).filter(Boolean);
+  const linkSlots = slots.slice(5).filter(Boolean);
+
+  // Resolve hovered slot from either featured or link section
+  const hoveredSlot = hoveredIdx !== null
+    ? (typeof hoveredIdx === "string" && hoveredIdx.startsWith("feat-")
+        ? featuredSlots[parseInt(hoveredIdx.replace("feat-", ""), 10)]
+        : linkSlots[hoveredIdx])
+    : null;
+
+  // For taxonomy-node slots: find their children in the taxonomy tree
+  const hoveredNode = hoveredSlot && !hoveredSlot.catId?.startsWith("lbl:")
+    ? findNodeById(cat, hoveredSlot.catId) : null;
+  const flyoutChildren = hoveredNode?.children?.length ? hoveredNode.children : [];
+
+  // For label slots: collect the non-label items that follow until the next label
+  const labelSectionItems = (() => {
+    if (!hoveredSlot || !hoveredSlot.catId?.startsWith("lbl:")) return [];
+    const idx = typeof hoveredIdx === "number" ? hoveredIdx : -1;
+    if (idx === -1) return [];
+    const items = [];
+    for (let j = idx + 1; j < linkSlots.length; j++) {
+      if (linkSlots[j].level === "label") break;
+      items.push(linkSlots[j]);
+    }
+    return items;
+  })();
+
+  // Determine what the flyout column should show
+  const showFlyout = flyoutChildren.length > 0 || labelSectionItems.length > 0;
+
+  // Build default display columns from non-hovered state
+  const sections = [];
+  let currentSection = { label: null, items: [] };
+  for (const s of linkSlots) {
+    if (s.level === "label") {
+      if (currentSection.items.length || currentSection.label) sections.push(currentSection);
+      currentSection = { label: s.label, items: [] };
+    } else {
+      currentSection.items.push(s);
+    }
+  }
+  if (currentSection.items.length || currentSection.label) sections.push(currentSection);
+
+  const MAX_COLS = 3;
+  const cols = Array.from({ length: MAX_COLS }, () => []);
+  let colIdx = 0;
+  for (const sec of sections) {
+    cols[colIdx].push(sec);
+    const totalInCol = cols[colIdx].reduce((a, s) => a + s.items.length + (s.label ? 1 : 0), 0);
+    if (totalInCol >= 7 && colIdx < MAX_COLS - 1) colIdx++;
+  }
+  const activeCols = cols.filter(c => c.length > 0);
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden" style={{ background: "#f0f2f5" }}>
+      {/* ── Simulated B&H Top Nav ── */}
+      <div style={{ background: "#3f9a59", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "6px 16px", gap: 10, borderBottom: "1px solid rgba(0,0,0,0.15)" }}>
+          <span style={{ fontWeight: 900, letterSpacing: 2, fontSize: 14, color: "white", marginRight: 6 }}>B&H</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>PHOTO · VIDEO · AUDIO</span>
+          <div style={{ flex: 1, margin: "0 16px" }}>
+            <div style={{ background: "rgba(0,0,0,0.18)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, padding: "5px 12px",
+              color: "rgba(255,255,255,0.5)", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ color: "rgba(255,255,255,0.4)" }}>🔍</span>
+              <span>Search</span>
+            </div>
+          </div>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>Preview Mode</span>
+        </div>
+        {/* Category tab bar */}
+        <div style={{ display: "flex", overflowX: "auto", background: "#3f9a59" }}>
+          {CAT_KEYS.map(key => {
+            const isActive = previewCat === key;
+            return (
+              <button key={key} onClick={() => { setPreviewCat(key); setHoveredIdx(null); }}
+                style={{
+                  padding: "8px 14px", whiteSpace: "nowrap", fontSize: 12, fontWeight: isActive ? 700 : 400,
+                  color: isActive ? "white" : "rgba(255,255,255,0.7)",
+                  borderBottom: isActive ? "2px solid white" : "2px solid transparent",
+                  background: isActive ? "rgba(0,0,0,0.15)" : "transparent", cursor: "pointer", flexShrink: 0,
+                  transition: "all 0.15s"
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = "white"; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+              >{taxonomy[key].heading}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Mega Menu Dropdown ── */}
+      <div className="flex-1 overflow-y-auto" style={{ background: "white" }}>
+        <div style={{ display: "flex", minHeight: "100%", borderTop: "2px solid #e5e7eb" }}>
+
+          {/* Left navigation column */}
+          <div style={{ width: 220, flexShrink: 0, borderRight: "1px solid #e5e7eb", padding: "16px 0" }}>
+            <div style={{ padding: "0 16px 10px" }}>
+              <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>All {cat.heading}</span>
+            </div>
+            <div style={{ height: 2, background: "#3f9a59", margin: "0 0 8px" }} />
+
+            {/* Featured slots 1–5 */}
+            {featuredSlots.length > 0 ? (
+              featuredSlots.map((slot, i) => {
+                const isHovered = hoveredIdx === `feat-${i}`;
+                return (
+                  <div key={i}
+                    onMouseEnter={() => { cancelHoverClear(); setHoveredIdx(`feat-${i}`); }}
+                    onMouseLeave={scheduleHoverClear}
+                    style={{
+                      padding: "5px 16px", fontSize: 13, cursor: "pointer",
+                      color: isHovered ? "#3f9a59" : "#1f2937",
+                      background: isHovered ? "#f0fdf4" : "transparent",
+                      borderLeft: isHovered ? "3px solid #3f9a59" : "3px solid transparent",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      transition: "all 0.1s"
+                    }}>
+                    <span>{slot.label}</span>
+                    {isHovered && (flyoutChildren.length > 0 || labelSectionItems.length > 0) &&
+                      <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>}
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ padding: "4px 16px", fontSize: 12, color: "#d1d5db", fontStyle: "italic" }}>
+                No featured categories set
+              </div>
+            )}
+
+            <div style={{ height: 2, background: "#3f9a59", margin: "8px 0" }} />
+
+            {/* Link slots 6–30 */}
+            <div style={{ paddingBottom: 8 }}>
+              {linkSlots.length === 0 ? (
+                <div style={{ padding: "8px 16px", fontSize: 12, color: "#d1d5db", fontStyle: "italic" }}>
+                  No links configured — add items in Admin view
+                </div>
+              ) : linkSlots.map((slot, i) => {
+                const isLabel = slot.level === "label";
+                const isHovered = hoveredIdx === i;
+                // Labels are hoverable too — they show their section items in column 2
+                return (
+                  <div key={i}
+                    onMouseEnter={() => { cancelHoverClear(); setHoveredIdx(i); }}
+                    onMouseLeave={scheduleHoverClear}
+                    style={{
+                      padding: isLabel ? "8px 16px 4px" : "5px 16px",
+                      fontSize: isLabel ? 10 : 13,
+                      fontWeight: isLabel ? 800 : 400,
+                      color: isLabel
+                        ? (isHovered ? "#3f9a59" : "#6b7280")
+                        : (isHovered ? "#3f9a59" : "#1f2937"),
+                      letterSpacing: isLabel ? "0.08em" : "normal",
+                      textTransform: isLabel ? "uppercase" : "none",
+                      marginTop: isLabel ? 4 : 0,
+                      cursor: "pointer",
+                      background: isHovered ? "#f0fdf4" : "transparent",
+                      borderLeft: (!isLabel && isHovered) ? "3px solid #3f9a59" : "3px solid transparent",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      transition: "all 0.1s"
+                    }}>
+                    <span>{slot.label}</span>
+                    {isHovered && (flyoutChildren.length > 0 || labelSectionItems.length > 0) &&
+                      <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 400, textTransform: "none", letterSpacing: "normal" }}>▸</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Middle content columns — stays visible while mouse travels over it */}
+          <div
+            onMouseEnter={cancelHoverClear}
+            onMouseLeave={scheduleHoverClear}
+            style={{ flex: 1, display: "flex", padding: "16px 0", overflowX: "auto" }}>
+            {showFlyout ? (
+              // Flyout: taxonomy children OR label section items
+              <div style={{ minWidth: 220, maxWidth: 280, padding: "0 20px", borderRight: "1px solid #f3f4f6" }}>
+                {hoveredNode ? (
+                  <>
+                    <div style={{ paddingBottom: 10, borderBottom: "2px solid #3f9a59", marginBottom: 10 }}>
+                      <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>All {hoveredNode.label}</span>
+                    </div>
+                    {flyoutChildren.map((child, i) => (
+                      <div key={i} style={{ padding: "4px 0", fontSize: 13, color: "#374151", cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 6 }}
+                        onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
+                        onMouseLeave={e => e.currentTarget.style.color = "#374151"}>
+                        {child.label}
+                        {child.children?.length > 0 && <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>}
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  // Label section items
+                  <>
+                    <div style={{ paddingBottom: 10, borderBottom: "2px solid #3f9a59", marginBottom: 10 }}>
+                      <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>{hoveredSlot?.label}</span>
+                    </div>
+                    {labelSectionItems.map((item, i) => {
+                      const node = findNodeById(cat, item.catId);
+                      return (
+                        <div key={i} style={{ padding: "4px 0", fontSize: 13, color: "#374151", cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 6 }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#374151"}>
+                          {item.label}
+                          {node?.children?.length > 0 && <span style={{ fontSize: 10, color: "#9ca3af" }}>▸</span>}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            ) : activeCols.length > 0 ? (
+              // Default: show configured sections in columns
+              activeCols.map((col, ci) => (
+                <div key={ci} style={{ minWidth: 200, maxWidth: 260, padding: "0 20px",
+                  borderRight: ci < activeCols.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                  {col.map((sec, si) => (
+                    <div key={si} style={{ marginBottom: 16 }}>
+                      {sec.label && (
+                        <div style={{ paddingBottom: 8, marginBottom: 8, borderBottom: "2px solid #3f9a59" }}>
+                          <span style={{ fontWeight: 800, fontSize: 13, color: "#111827" }}>All {sec.label}</span>
+                        </div>
+                      )}
+                      {sec.items.map((item, ii) => (
+                        <div key={ii} style={{ padding: "3px 0", fontSize: 13, color: "#374151", cursor: "pointer" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#374151"}>
+                          {item.label}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: "24px 20px", fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>
+                Add items to Non-featured Categories (slots 6–30) to see them here
+              </div>
+            )}
+          </div>
+
+          {/* Right featured column */}
+          <div style={{ width: 210, flexShrink: 0, borderLeft: "1px solid #e5e7eb", padding: "16px 0",
+            background: "#fafafa" }}>
+            {featuredSlots.length > 0 ? (
+              <>
+                {featuredSlots.map((slot, i) => (
+                  <div key={i} style={{ padding: "8px 16px", borderBottom: "1px solid #f3f4f6",
+                    display: "flex", flexDirection: "column", gap: 3 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      <span style={{ color: "#3f9a59", fontSize: 14, flexShrink: 0, marginTop: 1 }}>◈</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", cursor: "pointer", lineHeight: 1.4 }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#3f9a59"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#111827"}>
+                          {slot.label}
+                        </div>
+                        {slot.explorerUrl && (
+                          <div style={{ fontSize: 11, color: "#3b82f6", marginTop: 2, cursor: "pointer" }}>
+                            Explora article →
+                          </div>
+                        )}
+                        <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, fontFamily: "monospace" }}>
+                          ID {slot.catId}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {featuredSlots.length < 5 && (
+                  <div style={{ padding: "8px 16px", fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>
+                    {5 - featuredSlots.length} featured slot{5 - featuredSlots.length > 1 ? "s" : ""} empty
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ padding: "16px", fontSize: 12, color: "#d1d5db", fontStyle: "italic", lineHeight: 1.6 }}>
+                Add items to Featured slots (1–5) to populate this column
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Preview footer note ── */}
+      <div style={{ background: "#fef9c3", borderTop: "1px solid #fde68a", padding: "6px 16px",
+        fontSize: 11, color: "#92400e", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+        <span>👁</span>
+        <span><strong>Customer Preview</strong> — hover links to see taxonomy flyouts · click tabs to switch categories · reflecting live slot data</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 const POLL_INTERVAL = 15000; // 15 seconds
 
@@ -329,6 +660,7 @@ export default function App() {
   const [dragPayload, setDragPayload] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [urlEdit, setUrlEdit] = useState(null);
+  const [viewMode, setViewMode] = useState("admin"); // "admin" | "preview"
 
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -535,18 +867,18 @@ export default function App() {
       onDragEnd={() => { setDragPayload(null); setDragOverIdx(null); }}>
 
       {/* ── SIDEBAR ──────────────────────────────────────────── */}
-      <aside className="flex flex-col flex-shrink-0" style={{ width:180, background:"#111827", color:"white" }}>
-        <div style={{ background:"#0d1117", borderBottom:"1px solid rgba(255,255,255,0.07)", padding:"12px 14px" }}>
+      <aside className="flex flex-col flex-shrink-0" style={{ width:180, background:"#3f9a59", color:"white" }}>
+        <div style={{ background:"rgba(0,0,0,0.2)", borderBottom:"1px solid rgba(255,255,255,0.1)", padding:"12px 14px" }}>
           <div style={{ fontWeight:900, letterSpacing:2, fontSize:13 }}>B&H</div>
-          <div style={{ fontSize:10, color:"#6b7280", marginTop:2, lineHeight:1.4 }}>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)", marginTop:2, lineHeight:1.4 }}>
             Mega Menu<br/>Merchandising
           </div>
         </div>
 
         {/* User identity strip */}
-        <div style={{ padding:"8px 14px", borderBottom:"1px solid rgba(255,255,255,0.07)", background:"rgba(255,255,255,0.04)" }}>
-          <div style={{ fontSize:10, color:"#6b7280" }}>Signed in as</div>
-          <div style={{ fontSize:12, fontWeight:700, color:"#f3f4f6", marginTop:1 }}>{userName}</div>
+        <div style={{ padding:"8px 14px", borderBottom:"1px solid rgba(255,255,255,0.1)", background:"rgba(0,0,0,0.1)" }}>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.6)" }}>Signed in as</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"white", marginTop:1 }}>{userName}</div>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-1">
@@ -560,22 +892,22 @@ export default function App() {
             return (
               <button key={key} onClick={() => setActiveCat(key)}
                 className="w-full text-left flex flex-col transition-colors"
-                style={{ padding:"7px 14px", background:isActive?"#e31e24":"transparent" }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="rgba(255,255,255,0.06)"; }}
+                style={{ padding:"7px 14px", background:isActive?"rgba(0,0,0,0.2)":"transparent" }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="rgba(0,0,0,0.12)"; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background="transparent"; }}
               >
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <span style={{ fontSize:12, fontWeight:isActive?700:400, color:isActive?"white":"#d1d5db", truncate:true }}
+                  <span style={{ fontSize:12, fontWeight:isActive?700:400, color:"white", truncate:true }}
                     className="truncate">{c.heading}</span>
                   {filled > 0 && (
                     <span style={{ fontSize:10, fontWeight:700, minWidth:18, height:18, borderRadius:9,
                       display:"flex", alignItems:"center", justifyContent:"center",
-                      background:isActive?"rgba(255,255,255,0.25)":"rgba(255,255,255,0.1)",
-                      color:isActive?"white":"#6b7280", flexShrink:0, marginLeft:4 }}>{filled}</span>
+                      background:"rgba(0,0,0,0.2)",
+                      color:"white", flexShrink:0, marginLeft:4 }}>{filled}</span>
                   )}
                 </div>
                 {ago && (
-                  <div style={{ fontSize:9, color:isActive?"rgba(255,255,255,0.6)":"#4b5563", marginTop:1 }}>
+                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.55)", marginTop:1 }}>
                     {by} · {ago}
                   </div>
                 )}
@@ -585,17 +917,17 @@ export default function App() {
         </nav>
 
         {/* Sync status */}
-        <div style={{ padding:"8px 14px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ padding:"8px 14px 12px", borderTop:"1px solid rgba(255,255,255,0.1)" }}>
           <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:10,
-            color: saveStatus === "saving" ? "#fbbf24"
-                 : saveStatus === "saved"  ? "#34d399"
-                 : saveStatus === "error"  ? "#f87171"
-                 : syncing ? "#60a5fa" : "#4b5563" }}>
+            color: saveStatus === "saving" ? "#fef08a"
+                 : saveStatus === "saved"  ? "white"
+                 : saveStatus === "error"  ? "#fca5a5"
+                 : syncing ? "#bfdbfe" : "rgba(255,255,255,0.6)" }}>
             <span style={{ width:6, height:6, borderRadius:"50%", flexShrink:0, display:"inline-block",
-              background: saveStatus === "saving" ? "#fbbf24"
-                        : saveStatus === "saved"  ? "#34d399"
-                        : saveStatus === "error"  ? "#f87171"
-                        : syncing ? "#60a5fa" : "#374151" }} />
+              background: saveStatus === "saving" ? "#fef08a"
+                        : saveStatus === "saved"  ? "white"
+                        : saveStatus === "error"  ? "#fca5a5"
+                        : syncing ? "#bfdbfe" : "rgba(255,255,255,0.3)" }} />
             {saveStatus === "saving" ? "Saving…"
            : saveStatus === "saved"  ? "Saved to shared storage"
            : saveStatus === "error"  ? "Save failed — retry"
@@ -603,7 +935,7 @@ export default function App() {
            : lastPoll ? `Synced ${timeAgo(lastPoll)}`
            : "Ready"}
           </div>
-          <div style={{ fontSize:9, color:"#374151", marginTop:4 }}>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)", marginTop:4 }}>
             Auto-saves · polls every 15s
           </div>
         </div>
@@ -633,23 +965,42 @@ export default function App() {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <div style={{ display:"flex", gap:8, fontSize:10, color:"#9ca3af", flexWrap:"wrap", justifyContent:"flex-end" }}>
-              {levelColors.map(l => (
-                <span key={l} style={{ display:"flex", alignItems:"center", gap:3 }}>
-                  <span style={{ width:6, height:6, borderRadius:"50%", background:LS[l].dot, display:"inline-block" }} />
-                  {LS[l].label}
-                </span>
+            {/* Admin / Preview toggle */}
+            <div style={{ display:"flex", background:"#f3f4f6", borderRadius:8, padding:2, gap:1 }}>
+              {[["admin","⚙ Admin"],["preview","👁 Preview"]].map(([mode, label]) => (
+                <button key={mode} onClick={() => setViewMode(mode)}
+                  style={{
+                    fontSize:11, fontWeight:700, padding:"5px 12px", borderRadius:6, cursor:"pointer",
+                    background: viewMode === mode ? "white" : "transparent",
+                    color: viewMode === mode ? "#111827" : "#6b7280",
+                    boxShadow: viewMode === mode ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                    transition:"all 0.15s"
+                  }}>{label}</button>
               ))}
             </div>
-            <button onClick={resetCat}
-              style={{ fontSize:11, color:"#9ca3af", padding:"4px 8px", borderRadius:4, cursor:"pointer", flexShrink:0 }}
-              onMouseEnter={e => { e.currentTarget.style.color="#ef4444"; e.currentTarget.style.background="#fef2f2"; }}
-              onMouseLeave={e => { e.currentTarget.style.color="#9ca3af"; e.currentTarget.style.background="transparent"; }}>
-              Reset
-            </button>
+            {viewMode === "admin" && <>
+              <div style={{ display:"flex", gap:8, fontSize:10, color:"#9ca3af", flexWrap:"wrap", justifyContent:"flex-end" }}>
+                {levelColors.map(l => (
+                  <span key={l} style={{ display:"flex", alignItems:"center", gap:3 }}>
+                    <span style={{ width:6, height:6, borderRadius:"50%", background:LS[l].dot, display:"inline-block" }} />
+                    {LS[l].label}
+                  </span>
+                ))}
+              </div>
+              <button onClick={resetCat}
+                style={{ fontSize:11, color:"#9ca3af", padding:"4px 8px", borderRadius:4, cursor:"pointer", flexShrink:0 }}
+                onMouseEnter={e => { e.currentTarget.style.color="#ef4444"; e.currentTarget.style.background="#fef2f2"; }}
+                onMouseLeave={e => { e.currentTarget.style.color="#9ca3af"; e.currentTarget.style.background="transparent"; }}>
+                Reset
+              </button>
+            </>}
           </div>
         </div>
 
+        {/* ── PREVIEW MODE ── */}
+        {viewMode === "preview" ? (
+          <MegaMenuPreview activeCat={activeCat} catData={catData} taxonomy={TAXONOMY} />
+        ) : (
         <div className="flex-1 overflow-y-auto p-4" style={{ display:"flex", flexDirection:"column", gap:14 }}>
           {/* ★ Featured */}
           <div style={{ background:"white", borderRadius:10, border:"1px solid #fde68a", overflow:"hidden" }}>
@@ -661,7 +1012,7 @@ export default function App() {
                 background:featCount===5?"#f59e0b":"#fef3c7", color:featCount===5?"white":"#92400e",
                 padding:"2px 8px", borderRadius:20 }}>{featCount}/5</span>
             </div>
-            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4 }}>
+            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4, maxHeight:220, overflowY:"auto" }}>
               {curSlots.slice(0, 5).map((slot, i) =>
                 slot ? (
                   <SlotRow key={i} slot={slot} slotNum={i+1} isFeatured
@@ -681,17 +1032,17 @@ export default function App() {
             </div>
           </div>
 
-          {/* ≡ Mega Menu Links */}
+          {/* ≡ Non-featured Categories */}
           <div style={{ background:"white", borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
             <div style={{ background:"#f9fafb", borderBottom:"1px solid #e5e7eb",
               padding:"8px 16px", display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontWeight:800, fontSize:12, color:"#374151" }}>≡ Mega Menu Links</span>
+              <span style={{ fontWeight:800, fontSize:12, color:"#374151" }}>≡ Non-featured Categories</span>
               <span style={{ fontSize:11, color:"#9ca3af" }}>Slots 6–30 · promote any taxonomy level</span>
               <span style={{ marginLeft:"auto", fontSize:11, fontWeight:700,
                 background:linkCount>0?"#3b82f6":"#f3f4f6", color:linkCount>0?"white":"#9ca3af",
                 padding:"2px 8px", borderRadius:20 }}>{linkCount}/25</span>
             </div>
-            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4 }}>
+            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4, maxHeight:480, overflowY:"auto" }}>
               {curSlots.slice(5).map((slot, i) =>
                 slot ? (
                   <SlotRow key={i} slot={slot} slotNum={i+6} isFeatured={false}
@@ -711,6 +1062,7 @@ export default function App() {
             </div>
           </div>
         </div>
+        )} {/* end preview/admin */}
       </div>
 
       {/* ── TAXONOMY PANEL ───────────────────────────────────── */}
