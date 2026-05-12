@@ -1012,7 +1012,7 @@ export default function App() {
                 background:featCount===5?"#f59e0b":"#fef3c7", color:featCount===5?"white":"#92400e",
                 padding:"2px 8px", borderRadius:20 }}>{featCount}/5</span>
             </div>
-            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4, maxHeight:220, overflowY:"auto" }}>
+            <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4, maxHeight:300, overflowY:"auto" }}>
               {curSlots.slice(0, 5).map((slot, i) =>
                 slot ? (
                   <SlotRow key={i} slot={slot} slotNum={i+1} isFeatured
