@@ -197,6 +197,7 @@ function TaxonomyNode({ item, depth, usedCatIds, onDragStart, onClickAdd }) {
           style={{ fontSize: Math.max(10, 12 - (item.level - 2)) }}>
           {item.label}
         </span>
+        <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">{item.catId}</span>
         {inSlot
           ? <span className="text-[10px] text-emerald-500 flex-shrink-0 font-bold">✓</span>
           : <button onClick={() => onClickAdd({ label: item.label, catId: item.catId, level: item.level, explorerUrl: "" })}
@@ -285,7 +286,7 @@ function SlotRow({ slot, slotNum, isFeatured, onRemove, onLinkEdit, onDragStart,
       </span>
       <LevelBadge level={slot.level} />
       <span className="flex-1 text-sm text-gray-800 font-medium truncate">{slot.label}</span>
-      <span className="text-[10px] text-gray-300 font-mono flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">{slot.catId}</span>
+      <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">{slot.catId}</span>
       <button onClick={e => { e.stopPropagation(); onLinkEdit(); }}
         title={slot.explorerUrl ? `Explora: ${slot.explorerUrl}` : "Add Explora article link"}
         className={`flex-shrink-0 text-[11px] px-1.5 py-0.5 rounded border transition-colors
