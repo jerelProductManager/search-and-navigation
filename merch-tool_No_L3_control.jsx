@@ -25,12 +25,9 @@ async function loadCatFromStorage(slug) {
   return null;
 }
 
-async function saveCatToStorage(slug, slots, slotsL3, slotsL4, buyingGuideUrl, userName) {
+async function saveCatToStorage(slug, slots, userName) {
   const payload = {
     slots,
-    slotsL3,
-    slotsL4,
-    buyingGuideUrl: buyingGuideUrl || "",
     savedAt: Date.now(),
     savedBy: userName || "Anonymous"
   };
@@ -44,7 +41,7 @@ function emptySlots() { return Array(30).fill(null); }
 
 function initLocalState() {
   const out = {};
-  CAT_KEYS.forEach(k => { out[k] = { slots: emptySlots(), slotsL3: {}, slotsL4: {}, buyingGuideUrl: "", savedAt: null, savedBy: null }; });
+  CAT_KEYS.forEach(k => { out[k] = { slots: emptySlots(), savedAt: null, savedBy: null }; });
   return out;
 }
 
@@ -416,23 +413,13 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
     return [];
   })();
 
-  // ── col2Items: prefer configured slotsL3, fall back to taxonomy children ──
+  // ── col2Items: always {label, catId, children[]} ──────────────────────────
   const col2Items = (() => {
-    // If hovered slot is a real L2 category (not a label), check for configured L3 slots
-    if (hoveredSlot && !hoveredSlot.catId?.startsWith("lbl:")) {
-      const configuredL3 = (cur?.slotsL3?.[hoveredSlot.catId] || []).filter(Boolean);
-      if (configuredL3.length > 0) {
-        // Enrich each configured slot with taxonomy children for further flyout levels
-        return configuredL3.map(s => {
-          const taxNode = findNodeById(cat, s.catId);
-          return { label: s.label, catId: s.catId, children: taxNode?.children || [] };
-        });
-      }
-    }
-    // Fall back: use taxonomy children directly
     if (col1Node?.children?.length) return col1Node.children;
     if (!labelSectionItems.length)   return [];
     return labelSectionItems.map(s => {
+      // Items may be full taxonomy nodes (GROUPS path, already have .children)
+      // or slot stubs (slot path, need findNodeById for children)
       const children = s.children?.length
         ? s.children
         : (l2ByIds[s.catId]?.children || findNodeById(cat, s.catId)?.children || []);
@@ -440,22 +427,8 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
     });
   })();
 
-  // ── col3Items: prefer configured slotsL4, fall back to taxonomy children ──
-  const col3Items = (() => {
-    if (col2Idx === null) return [];
-    const col2Item = col2Items[col2Idx];
-    if (!col2Item) return [];
-    // Check for configured L4 slots for this L3 category
-    const configuredL4 = (cur?.slotsL4?.[col2Item.catId] || []).filter(Boolean);
-    if (configuredL4.length > 0) {
-      return configuredL4.map(s => {
-        const taxNode = findNodeById(cat, s.catId);
-        return { label: s.label, catId: s.catId, children: taxNode?.children || [] };
-      });
-    }
-    // Fall back to taxonomy children
-    return col2Item.children || [];
-  })();
+  // ── col3Items from the hovered col2 item ───────────────────────────────────
+  const col3Items = col2Idx !== null ? (col2Items[col2Idx]?.children || []) : [];
 
   // ── col4Items from the hovered col3 item ───────────────────────────────────
   const col4Items = col3Idx !== null ? (col3Items[col3Idx]?.children || []) : [];
@@ -696,84 +669,6 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
               </div>
             )}
           </div>
-
-          {/* ── Utility Column ── */}
-          {(() => {
-            const catName = cat.heading;
-            const bgUrl = cur?.buyingGuideUrl || "";
-            const utilItems = [
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/><path d="M12 2L6 8"/></svg>,
-                label: "Specials in",
-                highlight: catName,
-                url: null,
-              },
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="2"/><path d="M8 14h.01M16 14h.01"/></svg>,
-                label: "Used Pro",
-                highlight: catName,
-                url: null,
-              },
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-                label: "New in",
-                highlight: catName,
-                url: null,
-              },
-            ];
-            const toolItems = [
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
-                label: `Find The Perfect ${catName} Cable`,
-                url: null,
-              },
-              {
-                icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3f9a59" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-                label: `${catName} Buying Guide`,
-                url: bgUrl,
-                configurable: true,
-              },
-            ];
-            return (
-              <div style={{ width: 220, flexShrink: 0, borderLeft: "1px solid #e5e7eb", padding: "16px 0", background: "#fafafa", overflowY: "auto" }}>
-                <div style={{ padding: "0 14px 10px", borderBottom: "2px solid #3f9a59", marginBottom: 4 }}>
-                  <span style={{ fontWeight: 800, fontSize: 12, color: "#111827" }}>Shop &amp; Learn</span>
-                </div>
-                {utilItems.map((item, i) => (
-                  <div key={i} style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
-                    borderLeft: "3px solid transparent", transition: "all 0.1s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.borderLeftColor = "#3f9a59"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderLeftColor = "transparent"; }}>
-                    <span style={{ flexShrink: 0, display:"flex", alignItems:"center" }}>{item.icon}</span>
-                    <span style={{ fontSize: 13, color: "#1f2937", lineHeight: 1.35 }}>
-                      {item.label} <strong>{item.highlight}</strong>
-                    </span>
-                  </div>
-                ))}
-
-                <div style={{ margin: "8px 14px", borderTop: "1px dashed #d1d5db" }} />
-
-                {toolItems.map((item, i) => (
-                  <div key={i} style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
-                    borderLeft: "3px solid transparent", transition: "all 0.1s",
-                    opacity: item.configurable && !item.url ? 0.5 : 1 }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.borderLeftColor = "#3f9a59"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderLeftColor = "transparent"; }}>
-                    <span style={{ flexShrink: 0, display:"flex", alignItems:"center" }}>{item.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 13, color: "#1f2937", lineHeight: 1.35 }}>{item.label}</span>
-                      {item.configurable && item.url && (
-                        <div style={{ fontSize: 10, color: "#3b82f6", marginTop: 2 }}>bhphotovideo.com/explora →</div>
-                      )}
-                      {item.configurable && !item.url && (
-                        <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 2 }}>⚠ No URL set — configure in Admin</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
         </div>
       </div>
 
@@ -796,20 +691,12 @@ export default function App() {
   const [nameSet, setNameSet] = useState(false);
 
   const [activeCat, setActiveCat] = useState("photography");
-  const handleSetActiveCat = (key) => {
-    setActiveCat(key);
-    setActiveL3Parent(null);
-    setActiveL4Parent(null);
-  };
   const [catData, setCatData] = useState(initLocalState); // { [slug]: { slots, savedAt, savedBy } }
 
   const [dragPayload, setDragPayload] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [urlEdit, setUrlEdit] = useState(null);
   const [viewMode, setViewMode] = useState("admin"); // "admin" | "preview"
-  const [levelTab, setLevelTab] = useState("l2"); // "l2" | "l3" | "l4"
-  const [activeL3Parent, setActiveL3Parent] = useState(null); // L2 catId
-  const [activeL4Parent, setActiveL4Parent] = useState(null); // L3 catId
 
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -828,14 +715,12 @@ export default function App() {
         if (data) {
           next[slug] = {
             slots: Array.isArray(data.slots) ? data.slots : emptySlots(),
-            slotsL3: (data.slotsL3 && !Array.isArray(data.slotsL3)) ? data.slotsL3 : {},
-            slotsL4: (data.slotsL4 && !Array.isArray(data.slotsL4)) ? data.slotsL4 : {},
-            buyingGuideUrl: data.buyingGuideUrl || "",
             savedAt: data.savedAt || null,
             savedBy: data.savedBy || null,
           };
         }
       }));
+      setCatData(next);
       setLastPoll(Date.now());
       setLoading(false);
     }
@@ -853,11 +738,8 @@ export default function App() {
         if (data) {
           next[slug] = {
             slots: Array.isArray(data.slots) ? data.slots : emptySlots(),
-            slotsL3: (data.slotsL3 && !Array.isArray(data.slotsL3)) ? data.slotsL3 : {},
-            slotsL4: (data.slotsL4 && !Array.isArray(data.slotsL4)) ? data.slotsL4 : {},
             savedAt: data.savedAt || null,
-            buyingGuideUrl: data.buyingGuideUrl || "",
-            savedAt: data.savedAt || null,
+            savedBy: data.savedBy || null,
           };
           // Only update if remote is newer than what we have
           // (don't overwrite unsaved local edits for active category)
@@ -882,11 +764,7 @@ export default function App() {
   }, []);
 
   const cur = catData[activeCat];
-  const curSlots = levelTab === "l3"
-    ? (activeL3Parent ? (cur?.slotsL3?.[activeL3Parent] || emptySlots()) : emptySlots())
-    : levelTab === "l4"
-    ? (activeL4Parent ? (cur?.slotsL4?.[activeL4Parent] || emptySlots()) : emptySlots())
-    : (cur?.slots || emptySlots());
+  const curSlots = cur?.slots || emptySlots();
   const cat = TAXONOMY[activeCat];
   const usedCatIds = new Set(curSlots.filter(Boolean).map(s => s.catId));
   const featCount = curSlots.slice(0, 5).filter(Boolean).length;
@@ -895,39 +773,18 @@ export default function App() {
   // ── Update slots and auto-save with debounce ──
   const updateSlots = useCallback((fn) => {
     setCatData(prev => {
-      let newCatData;
-      if (levelTab === "l3" && activeL3Parent) {
-        const next = [...(prev[activeCat]?.slotsL3?.[activeL3Parent] || emptySlots())];
-        fn(next);
-        const newSlotsL3 = { ...prev[activeCat]?.slotsL3, [activeL3Parent]: next };
-        newCatData = { ...prev, [activeCat]: { ...prev[activeCat], slotsL3: newSlotsL3 } };
-      } else if (levelTab === "l4" && activeL4Parent) {
-        const next = [...(prev[activeCat]?.slotsL4?.[activeL4Parent] || emptySlots())];
-        fn(next);
-        const newSlotsL4 = { ...prev[activeCat]?.slotsL4, [activeL4Parent]: next };
-        newCatData = { ...prev, [activeCat]: { ...prev[activeCat], slotsL4: newSlotsL4 } };
-      } else if (levelTab === "l2") {
-        const next = [...(prev[activeCat]?.slots || emptySlots())];
-        fn(next);
-        newCatData = { ...prev, [activeCat]: { ...prev[activeCat], slots: next } };
-      } else {
-        return prev; // no parent selected for L3/L4, no-op
-      }
+      const next = [...(prev[activeCat]?.slots || emptySlots())];
+      fn(next);
+      const newCatData = { ...prev, [activeCat]: { ...prev[activeCat], slots: next } };
 
       // Debounced auto-save
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      pendingSaveRef.current = {
-        slug: activeCat,
-        slots: newCatData[activeCat].slots,
-        slotsL3: newCatData[activeCat].slotsL3,
-        slotsL4: newCatData[activeCat].slotsL4,
-        buyingGuideUrl: newCatData[activeCat].buyingGuideUrl || "",
-      };
+      pendingSaveRef.current = { slug: activeCat, slots: next };
       debounceRef.current = setTimeout(async () => {
         if (!pendingSaveRef.current) return;
-        const { slug, slots, slotsL3, slotsL4, buyingGuideUrl } = pendingSaveRef.current;
+        const { slug, slots } = pendingSaveRef.current;
         setSaveStatus("saving");
-        const ok = await saveCatToStorage(slug, slots, slotsL3, slotsL4, buyingGuideUrl, userName);
+        const ok = await saveCatToStorage(slug, slots, userName);
         if (ok) {
           setSaveStatus("saved");
           setCatData(p => ({
@@ -944,7 +801,7 @@ export default function App() {
 
       return newCatData;
     });
-  }, [activeCat, levelTab, activeL3Parent, activeL4Parent, userName]);
+  }, [activeCat, userName]);
 
   const startFromTaxonomy = (item) => setDragPayload({ item, fromSlot: null });
   const startFromSlot = (idx) => setDragPayload({ item: curSlots[idx], fromSlot: idx });
@@ -983,29 +840,9 @@ export default function App() {
   };
 
   const resetCat = () => {
-    const levelLabel = levelTab === "l3" ? "L3" : levelTab === "l4" ? "L4" : "L2";
-    if (!confirm(`Reset all ${levelLabel} slots for ${cat.heading}?`)) return;
+    if (!confirm(`Reset all slots for ${cat.heading}?`)) return;
     updateSlots(s => { for (let i = 0; i < 30; i++) s[i] = null; });
   };
-
-  const saveBuyingGuideUrl = useCallback(async (url) => {
-    setCatData(prev => ({
-      ...prev,
-      [activeCat]: { ...prev[activeCat], buyingGuideUrl: url }
-    }));
-    setSaveStatus("saving");
-    const d = catData[activeCat];
-    const ok = await saveCatToStorage(
-      activeCat,
-      d?.slots || emptySlots(),
-      d?.slotsL3 || {},
-      d?.slotsL4 || {},
-      url,
-      userName
-    );
-    if (ok) { setSaveStatus("saved"); setTimeout(() => setSaveStatus(null), 2500); }
-    else { setSaveStatus("error"); setTimeout(() => setSaveStatus(null), 3000); }
-  }, [activeCat, catData, userName]);
 
   const levelColors = [2,3,4,5,6,7];
 
@@ -1089,7 +926,7 @@ export default function App() {
             const ago = timeAgo(d?.savedAt);
             const by = d?.savedBy;
             return (
-              <button key={key} onClick={() => handleSetActiveCat(key)}
+              <button key={key} onClick={() => setActiveCat(key)}
                 className="w-full text-left flex flex-col transition-colors"
                 style={{ padding:"7px 14px", background:isActive?"rgba(0,0,0,0.2)":"transparent" }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background="rgba(0,0,0,0.12)"; }}
@@ -1142,26 +979,17 @@ export default function App() {
 
       {/* ── CENTER ───────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header */}
         <div className="flex-shrink-0 flex items-center gap-4 px-5 py-2.5"
           style={{ background:"white", borderBottom:"1px solid #e5e7eb" }}>
           <div>
             <div style={{ fontWeight:800, fontSize:15, color:"#111827" }}>{cat.heading}</div>
             <div style={{ fontSize:11, color:"#9ca3af", marginTop:1, display:"flex", gap:8, alignItems:"center" }}>
               <span>CatID <span style={{ fontFamily:"monospace" }}>{cat.catId}</span></span>
-              {levelTab === "l2" && <>
-                <span style={{ color:"#d1d5db" }}>·</span>
-                <span style={{ color:"#d97706", fontWeight:600 }}>★ {featCount}/5 featured</span>
-                <span style={{ color:"#d1d5db" }}>·</span>
-                <span style={{ color:"#3b82f6", fontWeight:600 }}>≡ {linkCount}/25 links</span>
-              </>}
-              {levelTab === "l3" && <>
-                <span style={{ color:"#d1d5db" }}>·</span>
-                <span style={{ color:"#3b82f6", fontWeight:600 }}>{curSlots.filter(Boolean).length}/30 L3 slots</span>
-              </>}
-              {levelTab === "l4" && <>
-                <span style={{ color:"#d1d5db" }}>·</span>
-                <span style={{ color:"#8b5cf6", fontWeight:600 }}>{curSlots.filter(Boolean).length}/30 L4 slots</span>
-              </>}
+              <span style={{ color:"#d1d5db" }}>·</span>
+              <span style={{ color:"#d97706", fontWeight:600 }}>★ {featCount}/5 featured</span>
+              <span style={{ color:"#d1d5db" }}>·</span>
+              <span style={{ color:"#3b82f6", fontWeight:600 }}>≡ {linkCount}/25 links</span>
               {cur?.savedBy && (
                 <>
                   <span style={{ color:"#d1d5db" }}>·</span>
@@ -1173,24 +1001,6 @@ export default function App() {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            {/* Level tabs */}
-            {viewMode === "admin" && (
-              <div style={{ display:"flex", background:"#f3f4f6", borderRadius:8, padding:2, gap:1 }}>
-                {[["l2","L2","#10b981"],["l3","L3","#3b82f6"],["l4","L4","#8b5cf6"]].map(([lv, lbl, col]) => (
-                  <button key={lv} onClick={() => { setLevelTab(lv); if (lv === "l2") { setActiveL3Parent(null); setActiveL4Parent(null); } }}
-                    style={{
-                      fontSize:11, fontWeight:700, padding:"5px 10px", borderRadius:6, cursor:"pointer",
-                      background: levelTab === lv ? "white" : "transparent",
-                      color: levelTab === lv ? col : "#6b7280",
-                      boxShadow: levelTab === lv ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                      transition:"all 0.15s", display:"flex", alignItems:"center", gap:4
-                    }}>
-                    <span style={{ width:6, height:6, borderRadius:"50%", background: levelTab===lv ? col : "#d1d5db", display:"inline-block", flexShrink:0 }} />
-                    {lbl}
-                  </button>
-                ))}
-              </div>
-            )}
             {/* Admin / Preview toggle */}
             <div style={{ display:"flex", background:"#f3f4f6", borderRadius:8, padding:2, gap:1 }}>
               {[["admin","⚙ Admin"],["preview","👁 Preview"]].map(([mode, label]) => (
@@ -1228,7 +1038,6 @@ export default function App() {
           <MegaMenuPreview activeCat={activeCat} catData={catData} taxonomy={TAXONOMY} />
         ) : (
         <div className="flex-1 overflow-y-auto p-4" style={{ display:"flex", flexDirection:"column", gap:14 }}>
-          {levelTab === "l2" ? (<>
           {/* ★ Featured */}
           <div style={{ background:"white", borderRadius:10, border:"1px solid #fde68a", overflow:"hidden" }}>
             <div style={{ background:"linear-gradient(to right,#fffbeb,#fff)", borderBottom:"1px solid #fde68a",
@@ -1288,169 +1097,9 @@ export default function App() {
               )}
             </div>
           </div>
-          </>) : (
-          /* ── L3 / L4 context-aware slots ── */
-          (() => {
-            const isL3 = levelTab === "l3";
-            const accent     = isL3 ? "#3b82f6" : "#8b5cf6";
-            const accentLight  = isL3 ? "#eff6ff" : "#f5f3ff";
-            const accentBorder = isL3 ? "#bfdbfe" : "#ddd6fe";
-            const accentText   = isL3 ? "#1d4ed8" : "#6d28d9";
-            const label  = isL3 ? "L3" : "L4";
-
-            // For L3: parents are the filled L2 slots
-            // For L4: parents are all filled L3 slots across slotsL3
-            const parentItems = isL3
-              ? (cur?.slots || emptySlots()).filter(Boolean).filter(s => !s.catId?.startsWith("lbl:"))
-              : Object.entries(cur?.slotsL3 || {}).flatMap(([, arr]) =>
-                  arr.filter(Boolean).filter(s => !s.catId?.startsWith("lbl:"))
-                );
-
-            const activeParent = isL3 ? activeL3Parent : activeL4Parent;
-            const setActiveParent = isL3 ? setActiveL3Parent : (id) => { setActiveL4Parent(id); };
-
-            const activeParentItem = parentItems.find(p => p.catId === activeParent);
-            const filledCount = curSlots.filter(Boolean).length;
-
-            return (
-              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                {/* ── Parent picker ── */}
-                <div style={{ background:"white", borderRadius:10, border:`1px solid ${accentBorder}`, overflow:"hidden" }}>
-                  <div style={{ background:`linear-gradient(to right,${accentLight},#fff)`, borderBottom:`1px solid ${accentBorder}`,
-                    padding:"8px 14px", display:"flex", alignItems:"center", gap:8 }}>
-                    <span style={{ color:accent, fontWeight:800, fontSize:12 }}>
-                      {isL3 ? "Select L2 parent" : "Select L3 parent"}
-                    </span>
-                    <span style={{ fontSize:11, color:accentText }}>
-                      {isL3
-                        ? "Choose an L2 category to configure its sub-categories"
-                        : "Choose an L3 category to configure its deep-links"}
-                    </span>
-                  </div>
-                  <div style={{ padding:"8px 12px", display:"flex", flexWrap:"wrap", gap:6 }}>
-                    {parentItems.length === 0 ? (
-                      <div style={{ fontSize:12, color:"#9ca3af", fontStyle:"italic", padding:"4px 0" }}>
-                        {isL3
-                          ? "No L2 slots filled yet — add items to L2 first"
-                          : "No L3 slots configured yet — set up L3 slots first"}
-                      </div>
-                    ) : parentItems.map(item => {
-                      const isActive = activeParent === item.catId;
-                      const childCount = isL3
-                        ? (cur?.slotsL3?.[item.catId] || []).filter(Boolean).length
-                        : (cur?.slotsL4?.[item.catId] || []).filter(Boolean).length;
-                      return (
-                        <button key={item.catId} onClick={() => setActiveParent(item.catId)}
-                          style={{
-                            fontSize:11, fontWeight: isActive ? 700 : 500,
-                            padding:"5px 10px", borderRadius:20, cursor:"pointer",
-                            border: `1px solid ${isActive ? accent : "#e5e7eb"}`,
-                            background: isActive ? accent : "white",
-                            color: isActive ? "white" : "#374151",
-                            display:"flex", alignItems:"center", gap:5,
-                            transition:"all 0.12s"
-                          }}>
-                          {item.label}
-                          {childCount > 0 && (
-                            <span style={{
-                              fontSize:10, fontWeight:700,
-                              background: isActive ? "rgba(255,255,255,0.3)" : accentLight,
-                              color: isActive ? "white" : accent,
-                              borderRadius:10, padding:"1px 5px", lineHeight:"14px"
-                            }}>{childCount}</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* ── Slot panel (only shown when a parent is selected) ── */}
-                {activeParent ? (
-                  <div style={{ background:"white", borderRadius:10, border:`1px solid ${accentBorder}`, overflow:"hidden" }}>
-                    <div style={{ background:`linear-gradient(to right,${accentLight},#fff)`, borderBottom:`1px solid ${accentBorder}`,
-                      padding:"8px 16px", display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ color:accent, fontWeight:800, fontSize:12 }}>
-                        ⊞ {label} slots for <em style={{ fontStyle:"normal" }}>{activeParentItem?.label || activeParent}</em>
-                      </span>
-                      <span style={{ marginLeft:"auto", fontSize:11, fontWeight:700,
-                        background:filledCount>0?accent:"#f3f4f6", color:filledCount>0?"white":"#9ca3af",
-                        padding:"2px 8px", borderRadius:20 }}>{filledCount}/30</span>
-                    </div>
-                    <div style={{ padding:"8px 12px", display:"flex", flexDirection:"column", gap:4, maxHeight:580, overflowY:"auto" }}>
-                      {curSlots.map((slot, i) =>
-                        slot ? (
-                          <SlotRow key={i} slot={slot} slotNum={i+1} isFeatured={false}
-                            onRemove={() => removeSlot(i)}
-                            onLinkEdit={() => setUrlEdit({ idx:i, url:slot.explorerUrl||"" })}
-                            onDragStart={() => startFromSlot(i)}
-                            onDragOver={() => setDragOverIdx(i)}
-                            onDrop={() => dropOnSlot(i)}
-                            isDragOver={dragOverIdx===i} />
-                        ) : (
-                          <EmptySlot key={i} slotNum={i+1} isFeatured={false}
-                            onDragOver={() => setDragOverIdx(i)}
-                            onDrop={() => dropOnSlot(i)}
-                            isDragOver={dragOverIdx===i} />
-                        )
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ background:"white", borderRadius:10, border:`1px solid ${accentBorder}`,
-                    padding:"32px 24px", textAlign:"center", color:"#9ca3af", fontSize:13, fontStyle:"italic" }}>
-                    ↑ Select a parent category above to configure its {label} slots
-                  </div>
-                )}
-              </div>
-            );
-          })()
-          )}
-
-          {/* ── Utility Links Config ── */}
-          {levelTab === "l2" && (() => {
-            const bgUrl = cur?.buyingGuideUrl || "";
-            return (
-              <div style={{ background:"white", borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
-                <div style={{ background:"#f9fafb", borderBottom:"1px solid #e5e7eb",
-                  padding:"8px 16px", display:"flex", alignItems:"center", gap:8 }}>
-                  <span style={{ fontWeight:800, fontSize:12, color:"#374151" }}>📚 Utility Column</span>
-                  <span style={{ fontSize:11, color:"#9ca3af" }}>Always-visible rightmost column in preview</span>
-                </div>
-                <div style={{ padding:"12px 16px", display:"flex", flexDirection:"column", gap:8 }}>
-                  <div style={{ fontSize:11, color:"#6b7280", lineHeight:1.5 }}>
-                    <strong>Auto-generated (read-only):</strong> Specials in {cat.heading} · Used Pro {cat.heading} · New in {cat.heading} · Find The Perfect {cat.heading} Cable
-                  </div>
-                  <div>
-                    <label style={{ fontSize:11, fontWeight:700, color:"#374151", display:"block", marginBottom:4 }}>
-                      {cat.heading.toUpperCase()} BUYING GUIDE URL
-                    </label>
-                    <div style={{ display:"flex", gap:8 }}>
-                      <input
-                        type="url"
-                        defaultValue={bgUrl}
-                        key={activeCat}
-                        onBlur={e => { if (e.target.value !== bgUrl) saveBuyingGuideUrl(e.target.value); }}
-                        onKeyDown={e => { if (e.key === "Enter") { saveBuyingGuideUrl(e.target.value); e.target.blur(); } }}
-                        placeholder="https://www.bhphotovideo.com/explora/..."
-                        style={{ flex:1, border:"1px solid #d1d5db", borderRadius:6, padding:"7px 10px",
-                          fontSize:12, outline:"none", boxSizing:"border-box" }}
-                        onFocus={e => { e.currentTarget.style.borderColor="#3b82f6"; }}
-                      />
-                      {bgUrl && (
-                        <a href={bgUrl} target="_blank" rel="noreferrer"
-                          style={{ fontSize:11, color:"#3b82f6", padding:"7px 10px", borderRadius:6,
-                            border:"1px solid #bfdbfe", background:"#eff6ff", whiteSpace:"nowrap", textDecoration:"none" }}>
-                          Open ↗
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
         </div>
+        )} {/* end preview/admin */}
+      </div>
 
       {/* ── TAXONOMY PANEL ───────────────────────────────────── */}
       <aside className="flex flex-col flex-shrink-0 overflow-hidden"
@@ -1458,11 +1107,7 @@ export default function App() {
         <div style={{ padding:"10px 14px 6px", borderBottom:"1px solid #f3f4f6", background:"#f9fafb", flexShrink:0 }}>
           <div style={{ fontWeight:700, fontSize:12, color:"#374151" }}>Category Taxonomy</div>
           <div style={{ fontSize:10, color:"#9ca3af", marginTop:2, lineHeight:1.4 }}>
-            {levelTab === "l3" && activeL3Parent
-              ? <>Showing <strong style={{ color:"#3b82f6" }}>L3 children</strong> of selected parent</>
-              : levelTab === "l4" && activeL4Parent
-              ? <>Showing <strong style={{ color:"#8b5cf6" }}>L4 children</strong> of selected parent</>
-              : <>8,175 nodes · L2–L7 · drag or click <strong>+</strong> · ▸ to expand</>}
+            8,175 nodes · L2–L7 · drag or click <strong>+</strong> · ▸ to expand
           </div>
         </div>
 
@@ -1471,40 +1116,6 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto py-1">
           {(() => {
-            // ── L3 filtered view: show only children of the active L2 parent ──
-            if (levelTab === "l3" && activeL3Parent) {
-              const parentNode = cat.children.find(c => c.catId === activeL3Parent)
-                || cat.children.flatMap(c => c.children || []).find(c => c.catId === activeL3Parent);
-              const children = parentNode?.children || [];
-              if (children.length === 0) {
-                return <div style={{ padding:"16px 14px", fontSize:12, color:"#9ca3af", fontStyle:"italic" }}>
-                  No L3 children found for this category
-                </div>;
-              }
-              return children.map(item => (
-                <TaxonomyNode key={item.catId} item={item} depth={0}
-                  usedCatIds={usedCatIds} onDragStart={startFromTaxonomy} onClickAdd={clickAdd} />
-              ));
-            }
-
-            // ── L4 filtered view: show only children of the active L3 parent ──
-            if (levelTab === "l4" && activeL4Parent) {
-              const allL3 = cat.children.flatMap(c => c.children || []);
-              const parentNode = allL3.find(c => c.catId === activeL4Parent)
-                || allL3.flatMap(c => c.children || []).find(c => c.catId === activeL4Parent);
-              const children = parentNode?.children || [];
-              if (children.length === 0) {
-                return <div style={{ padding:"16px 14px", fontSize:12, color:"#9ca3af", fontStyle:"italic" }}>
-                  No L4 children found for this category
-                </div>;
-              }
-              return children.map(item => (
-                <TaxonomyNode key={item.catId} item={item} depth={0}
-                  usedCatIds={usedCatIds} onDragStart={startFromTaxonomy} onClickAdd={clickAdd} />
-              ));
-            }
-
-            // ── Default L2 full tree view ──
             const { order, seen } = buildGroupIndex(activeCat);
             const l2ByIds = Object.fromEntries(cat.children.map(c => [c.catId, c]));
 
