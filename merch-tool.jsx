@@ -125,6 +125,45 @@ const GROUPS = {
   more: [], // no label groups defined
 };
 
+// ─── APPLICATIONS (RULE-BASED CATEGORY) ──────────────────────────────────────
+// "Application" (catId 56954) is a cross-cutting bucket that sits at the top
+// of the Category Taxonomy column for any L1 in APPLICATION_L1_KEYS. The
+// parent node itself is NOT draggable; only its leaf children are.
+// Children are level-3 categories but may be dropped into any slot level.
+const APPLICATIONS = {
+  catId: "56954",
+  label: "Application",
+  level: 2,
+  groups: [
+    {
+      label: "Application - Photography",
+      children: [
+        { label: "Portrait Photography",             catId: "61959" },
+        { label: "Wedding Photography",              catId: "62211" },
+        { label: "Landscape Photography",            catId: "56817" },
+        { label: "Wildlife Photography",             catId: "56888" },
+        { label: "Macro Photography",                catId: "56887" },
+        { label: "Astrophotography",                 catId: "56886" },
+        { label: "Portrait and Studio Photography",  catId: "56889" }
+      ]
+    },
+    {
+      label: "Application - Video",
+      children: [
+        { label: "Intro to Cinema",   catId: "56891" },
+        { label: "Content Creation",  catId: "56890" }
+      ]
+    }
+  ]
+};
+const APPLICATION_L1_KEYS = new Set(["photography", "provideo"]);
+// Flat list of Application leaf children, each pre-tagged with level 3 so
+// the existing slot/render code treats them like any other L3 category.
+const APPLICATION_CHILDREN = APPLICATIONS.groups.flatMap(g =>
+  g.children.map(ch => ({ label: ch.label, catId: ch.catId, level: 3 }))
+);
+
+
 // Build lookup: catId → group label for a given slug
 function buildGroupIndex(slug) {
   const index = {}; // catId → label (null = ungrouped intentionally)
@@ -216,14 +255,68 @@ function TaxonomyNode({ item, depth, usedCatIds, onDragStart, onClickAdd }) {
   );
 }
 
+
+// ─── APPLICATION NODE ────────────────────────────────────────────────────────
+// Renders the cross-cutting "Application 56954" bucket in the taxonomy tree.
+// The parent row and the per-group labels are non-draggable; only the leaf
+// children inside each group are draggable (rendered as ordinary L3 nodes).
+function ApplicationNode({ usedCatIds, onDragStart, onClickAdd }) {
+  const [open, setOpen] = useState(false);
+  const s = LS[APPLICATIONS.level] || LS[2];
+  return (
+    <div>
+      <div className="group flex items-center gap-1.5 py-[4px] pr-2 rounded transition-colors hover:bg-gray-100"
+        style={{ paddingLeft: 8 }}>
+        <button onClick={() => setOpen(o => !o)}
+          className="flex-shrink-0 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded hover:bg-gray-200 transition-colors leading-none"
+          style={{ fontSize:13, width:20, height:20, marginRight:1 }}>{open ? "▾" : "▸"}</button>
+        <span style={{ width:6, height:6, borderRadius:"50%", background:s.dot, display:"inline-block", flexShrink:0 }} />
+        <span className="flex-1 text-xs truncate text-gray-700 group-hover:text-gray-900"
+          style={{ fontSize: 12 }}>{APPLICATIONS.label}</span>
+        <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">{APPLICATIONS.catId}</span>
+      </div>
+      {open && (
+        <div>
+          {APPLICATIONS.groups.map(group => (
+            <React.Fragment key={group.label}>
+              <div style={{
+                padding: "5px 10px 4px 30px",
+                display: "flex", alignItems: "center", gap: 6,
+                fontSize: 10, fontWeight: 700,
+                letterSpacing: "0.05em", textTransform: "uppercase",
+                color: "#4b5563", background: "#f3f4f6",
+                borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb",
+                userSelect: "none"
+              }}>
+                <span className="flex-1 truncate">{group.label}</span>
+              </div>
+              {group.children.map(child => (
+                <TaxonomyNode
+                  key={child.catId}
+                  item={{ label: child.label, catId: child.catId, level: 3 }}
+                  depth={2}
+                  usedCatIds={usedCatIds}
+                  onDragStart={onDragStart}
+                  onClickAdd={onClickAdd} />
+              ))}
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── TAXONOMY SEARCH ──────────────────────────────────────────────────────────
 function flattenCat(children, out=[]) {
   for (const n of children) { out.push(n); if (n.children) flattenCat(n.children, out); }
   return out;
 }
-function TaxonomySearch({ taxonomy, usedCatIds, onDragStart, onClickAdd }) {
+function TaxonomySearch({ taxonomy, usedCatIds, onDragStart, onClickAdd, includeApplications }) {
   const [q, setQ] = useState("");
-  const allNodes = flattenCat(taxonomy.children);
+  const allNodes = includeApplications
+    ? [...APPLICATION_CHILDREN, ...flattenCat(taxonomy.children)]
+    : flattenCat(taxonomy.children);
   const results = q.trim().length < 2 ? [] : (() => {
     const ql = q.toLowerCase();
     return allNodes.filter(n => n.label.toLowerCase().includes(ql) || n.catId.includes(ql)).slice(0, 40);
@@ -1432,9 +1525,14 @@ export default function App() {
         </div>
 
         <TaxonomySearch taxonomy={cat} usedCatIds={usedCatIds}
-          onDragStart={startFromTaxonomy} onClickAdd={clickAdd} />
+          onDragStart={startFromTaxonomy} onClickAdd={clickAdd}
+          includeApplications={APPLICATION_L1_KEYS.has(activeCat)} />
 
         <div className="flex-1 overflow-y-auto py-1">
+          {APPLICATION_L1_KEYS.has(activeCat) && (
+            <ApplicationNode usedCatIds={usedCatIds}
+              onDragStart={startFromTaxonomy} onClickAdd={clickAdd} />
+          )}
           {(() => {
             // ── L3 filtered view: show only children of the active L2 parent ──
             if (levelTab === "l3" && activeL3Parent) {
