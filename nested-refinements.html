@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nested Refinements Initiative</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0D1B3E;
+    --navy-mid: #1A2D5A;
+    --gold: #D4A017;
+    --gold-bright: #F0C040;
+    --gold-pale: #FDF6DC;
+    --gold-mid: #B8860B;
+    --slate: #4A6080;
+    --gray-bg: #F4F6F9;
+    --white: #FFFFFF;
+    --text: #1A2D5A;
+    --muted: #6B7C99;
+    --orange: #F4845F;
+    --orange-pale: #FEF0EB;
+    --indigo-pale: #EEF2FF;
+    --border: #D8E2EF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0a0f1e;
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .deck { width: 100%; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.45s cubic-bezier(.4,0,.2,1), transform 0.45s cubic-bezier(.4,0,.2,1);
+    transform: translateY(18px);
+    overflow: hidden;
+  }
+  .slide.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+  .slide.exit   { opacity: 0; transform: translateY(-18px); }
+
+  /* NAV */
+  .nav {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(13,27,62,0.88); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50px; padding: 10px 20px; z-index: 100;
+  }
+  .nav button {
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,0.55); font-size: 18px;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, background 0.2s;
+  }
+  .nav button:hover { color: #fff; background: rgba(212,160,23,0.3); }
+  .nav .dots { display: flex; gap: 6px; align-items: center; }
+  .nav .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(255,255,255,0.25); cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .nav .dot.active { background: var(--gold-bright); transform: scale(1.3); }
+  .nav .counter { color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 500; min-width: 42px; text-align: center; }
+
+  .key-hint {
+    position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.22); font-size: 11px; letter-spacing: 0.05em;
+    animation: fadeHint 4s ease forwards; pointer-events: none;
+  }
+  @keyframes fadeHint { 0%,60%{opacity:1} 100%{opacity:0} }
+
+  /* SHARED */
+  .slide-inner { flex: 1; padding: 44px 56px 20px; display: flex; flex-direction: column; overflow: hidden; }
+  .slide-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(22px, 3vw, 36px);
+    color: var(--text); margin-bottom: 24px; flex-shrink: 0;
+  }
+  .gold-bar  { height: 5px; background: var(--gold); flex-shrink: 0; }
+  .orange-bar { height: 5px; background: var(--orange); flex-shrink: 0; }
+  .badge { display: inline-block; padding: 4px 14px; border-radius: 30px; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  /* ── SLIDE 1: TITLE ── */
+  #s1 { background: var(--navy); }
+  #s1 .left-bar { width: 5px; background: var(--gold); position: absolute; left:0; top:0; bottom:0; }
+  #s1 .circle1 { position:absolute; right:-60px; top:-80px; width:420px; height:420px; border-radius:50%; background:var(--navy-mid); opacity:0.6; }
+  #s1 .circle2 { position:absolute; right:60px; bottom:30px; width:260px; height:260px; border-radius:50%; background:var(--gold); opacity:0.1; }
+  #s1 .content { position:relative; z-index:2; padding:56px 64px; display:flex; flex-direction:column; justify-content:center; height:100%; }
+  #s1 .tag { background: var(--gold); color: #1A1000; margin-bottom: 22px; }
+  #s1 h1 { font-family:'DM Serif Display',serif; font-size:clamp(44px,6.5vw,72px); color:#fff; line-height:1.08; margin-bottom:22px; }
+  #s1 .sub { color:#9BBAD4; font-size:15px; font-style:italic; margin-bottom:36px; }
+  #s1 .presenters { color:var(--muted); font-size:12px; }
+
+  /* ── SLIDE 2: WHAT ── */
+  #s2 { background: var(--white); }
+  #s2 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+  #s2 .card { background:var(--gray-bg); border:1px solid var(--border); border-radius:10px; padding:22px 24px; border-left:5px solid var(--gold); box-shadow:0 4px 18px rgba(0,0,0,0.07); }
+  #s2 .card h3 { font-size:14px; font-weight:600; color:var(--text); margin-bottom:12px; }
+  #s2 .card p { font-size:13px; color:var(--slate); line-height:1.65; margin-bottom:10px; }
+  #s2 .card em { color:var(--gold-mid); font-style:normal; font-weight:600; }
+  #s2 .right-col { display:flex; flex-direction:column; gap:14px; }
+  #s2 .type-card { flex:1; border-radius:10px; padding:18px 20px; box-shadow:0 4px 18px rgba(0,0,0,0.1); }
+  #s2 .type-card.app { background:var(--navy); }
+  #s2 .type-card.cond { background:var(--gold-mid); }
+  #s2 .type-card h3 { font-size:13px; font-weight:600; color:#fff; margin-bottom:8px; }
+  #s2 .type-card p { font-size:12px; line-height:1.6; }
+  #s2 .type-card.app p { color:#9BBAD4; }
+  #s2 .type-card.cond p { color:#FFF8DC; }
+
+  /* ── SLIDE 3: PROBLEMS ── */
+  #s3 { background: var(--gray-bg); }
+  #s3 .problems { display:flex; flex-direction:column; gap:14px; flex:1; }
+  #s3 .problem { background:var(--white); border:1px solid var(--border); border-left:5px solid var(--orange); border-radius:10px; padding:18px 20px 18px 18px; display:flex; align-items:flex-start; gap:18px; box-shadow:0 3px 14px rgba(0,0,0,0.06); }
+  #s3 .prob-num { width:38px; height:38px; min-width:38px; border-radius:50%; background:var(--orange); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; font-weight:700; }
+  #s3 .prob-body h3 { font-size:14px; font-weight:600; color:var(--text); margin-bottom:5px; }
+  #s3 .prob-body p { font-size:13px; color:var(--slate); line-height:1.65; }
+
+  /* ── SLIDE 4: TRACKS ── */
+  #s4 { background: var(--white); }
+  #s4 .track-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; flex:1; }
+  #s4 .track { border-radius:12px; padding:20px 18px; display:flex; flex-direction:column; box-shadow:0 4px 20px rgba(0,0,0,0.08); border:1px solid var(--border); overflow:hidden; }
+  #s4 .track-num { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; color:#fff; flex-shrink:0; margin-bottom:12px; }
+  #s4 .track h3 { font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:8px; }
+  #s4 .track .condition { font-size:10px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; padding:3px 10px; border-radius:20px; display:inline-block; margin-bottom:10px; }
+  #s4 .track p { font-size:12px; color:var(--slate); line-height:1.65; flex:1; }
+  #s4 .track .example { margin-top:12px; padding:9px 12px; border-radius:8px; font-size:11px; color:var(--text); font-style:italic; }
+
+  #s4 .track.t1 { border-top:4px solid #6366F1; }
+  #s4 .track.t1 .track-num { background:#6366F1; }
+  #s4 .track.t1 .condition { background:#EEF2FF; color:#4F46E5; }
+  #s4 .track.t1 .example { background:#EEF2FF; }
+  #s4 .track.t2 { border-top:4px solid var(--gold); }
+  #s4 .track.t2 .track-num { background:var(--gold); }
+  #s4 .track.t2 .condition { background:var(--gold-pale); color:var(--gold-mid); }
+  #s4 .track.t2 .example { background:var(--gold-pale); }
+  #s4 .track.t3 { border-top:4px solid var(--orange); }
+  #s4 .track.t3 .track-num { background:var(--orange); }
+  #s4 .track.t3 .condition { background:var(--orange-pale); color:#C04E20; }
+  #s4 .track.t3 .example { background:var(--orange-pale); }
+
+  #s4 .slider-visual { margin:10px 0; background:#E8ECF2; border-radius:30px; height:6px; position:relative; }
+  #s4 .slider-visual .fill { position:absolute; left:20%; width:55%; height:100%; background:#6366F1; border-radius:30px; }
+  #s4 .slider-visual .handle { position:absolute; width:14px; height:14px; background:#fff; border:2.5px solid #6366F1; border-radius:50%; top:-4px; }
+  #s4 .slider-visual .handle.l { left:calc(20% - 7px); }
+  #s4 .slider-visual .handle.r { left:calc(75% - 7px); }
+  #s4 .slider-inputs { display:flex; gap:8px; margin-top:8px; }
+  #s4 .slider-inputs .inp { flex:1; background:#EEF2FF; border:1px solid #C7D2FE; border-radius:6px; padding:4px 8px; font-size:11px; color:#4F46E5; text-align:center; font-family:'DM Sans',sans-serif; }
+
+  #s4 .tree { margin:10px 0; font-size:11.5px; color:var(--slate); }
+  #s4 .tree .parent { color:var(--gold-mid); font-weight:600; }
+  #s4 .tree .child { padding-left:16px; position:relative; }
+  #s4 .tree .child::before { content:'└'; position:absolute; left:4px; color:var(--muted); }
+
+  #s4 .sep-visual { margin:10px 0; }
+  #s4 .sep-parent { background:var(--orange-pale); border:1px solid rgba(244,132,95,0.4); border-radius:6px; padding:5px 10px; font-size:11.5px; font-weight:600; color:#C04E20; margin-bottom:8px; }
+  #s4 .sep-below { background:#F8F9FC; border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-size:11px; color:var(--slate); }
+  #s4 .sep-arrow { font-size:11px; color:var(--muted); margin:2px 0 2px 10px; }
+
+  /* ── SLIDE 5: HOW IT WORKS ── */
+  #s5 { background: var(--white); }
+  #s5 .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; flex:1; }
+  #s5 .step { border-radius:12px; padding:22px 18px; color:#fff; display:flex; flex-direction:column; box-shadow:0 6px 24px rgba(0,0,0,0.15); }
+  #s5 .step .num { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; margin-bottom:16px; flex-shrink:0; }
+  #s5 .step h3 { font-size:13.5px; font-weight:600; margin-bottom:10px; }
+  #s5 .step p { font-size:12px; line-height:1.65; opacity:0.88; flex:1; }
+  #s5 .step.s1 { background:var(--navy); }
+  #s5 .step.s2 { background:var(--navy-mid); }
+  #s5 .step.s3 { background:var(--gold-mid); }
+  #s5 .step.s4 { background:#8B6914; }
+  #s5 .example-bar { margin-top:16px; background:var(--gray-bg); border:1px solid var(--border); border-left:4px solid var(--gold); border-radius:8px; padding:12px 18px; font-size:12.5px; color:var(--slate); flex-shrink:0; }
+  #s5 .example-bar strong { color:var(--gold-mid); }
+
+  /* ── SLIDE 6: WHERE ── */
+  #s6 { background: var(--white); }
+  #s6 .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+  #s6 .surface { border-radius:12px; padding:26px 24px; color:#fff; display:flex; flex-direction:column; box-shadow:0 6px 24px rgba(0,0,0,0.15); }
+  #s6 .surface.search { background:var(--navy); }
+  #s6 .surface.navbar { background:var(--gold-mid); }
+  #s6 .surface h3 { font-size:15px; font-weight:600; margin-bottom:14px; }
+  #s6 .surface p { font-size:13px; line-height:1.7; flex:1; }
+  #s6 .surface .owner { margin-top:18px; padding:10px 14px; background:rgba(255,255,255,0.12); border-radius:8px; font-size:11px; font-style:italic; opacity:0.85; }
+  #s6 .surface.search p { color:#9BBAD4; }
+  #s6 .surface.navbar p { color:#FFF8DC; }
+
+  /* ── SLIDE 7: SOLUTION ── */
+  #s7 { background: var(--white); }
+  #s7 .solutions { display:flex; flex-direction:column; gap:16px; flex:1; }
+  #s7 .sol { border-radius:10px; padding:22px 24px; border-left:6px solid transparent; box-shadow:0 3px 16px rgba(0,0,0,0.07); display:flex; flex-direction:column; gap:8px; }
+  #s7 .sol.drawer { background:var(--gold-pale); border-color:var(--gold); }
+  #s7 .sol.grouping { background:var(--indigo-pale); border-color:var(--navy); }
+  #s7 .sol h3 { font-size:14.5px; font-weight:600; }
+  #s7 .sol.drawer h3 { color:var(--gold-mid); }
+  #s7 .sol.grouping h3 { color:var(--navy); }
+  #s7 .sol p { font-size:13px; color:var(--slate); line-height:1.7; }
+  #s7 .ux-note { background:#FFF8E1; border:1px solid var(--gold-bright); border-radius:8px; padding:11px 16px; font-size:12px; color:#7A5C00; font-style:italic; flex-shrink:0; }
+
+  /* ── SLIDE 8: SCALE ── */
+  #s8 { background: var(--white); }
+  #s8 .scale-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+  #s8 .stat-card { border-radius:12px; padding:24px 22px; display:flex; flex-direction:column; box-shadow:0 4px 18px rgba(0,0,0,0.08); }
+  #s8 .stat-card.big { background:var(--navy); grid-row: span 2; }
+  #s8 .stat-card.pace { background:var(--gold-pale); border:1px solid var(--gold); }
+  #s8 .stat-card.ramp { background:var(--gray-bg); border:1px solid var(--border); }
+  #s8 .stat-num { font-family:'DM Serif Display',serif; font-size:clamp(42px,5vw,64px); color:var(--gold-bright); line-height:1; margin-bottom:6px; }
+  #s8 .stat-label { font-size:13px; font-weight:600; color:#fff; margin-bottom:10px; }
+  #s8 .stat-sub { font-size:12px; color:#9BBAD4; line-height:1.65; flex:1; }
+  #s8 .pace-num { font-family:'DM Serif Display',serif; font-size:clamp(32px,4vw,48px); color:var(--gold-mid); line-height:1; margin-bottom:4px; }
+  #s8 .pace-label { font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px; }
+  #s8 .pace-sub { font-size:12px; color:var(--slate); line-height:1.6; }
+  #s8 .ramp-label { font-size:13px; font-weight:600; color:var(--text); margin-bottom:12px; }
+  #s8 .ramp-bars { display:flex; flex-direction:column; gap:8px; }
+  #s8 .ramp-row { display:flex; align-items:center; gap:10px; }
+  #s8 .ramp-row span { font-size:11px; color:var(--slate); min-width:56px; }
+  #s8 .ramp-bar-bg { flex:1; height:8px; background:#E8ECF2; border-radius:20px; overflow:hidden; }
+  #s8 .ramp-bar-fill { height:100%; border-radius:20px; background:var(--gold); }
+  #s8 .ramp-val { font-size:11px; font-weight:600; color:var(--gold-mid); min-width:60px; }
+  #s8 .priority-note { margin-top:14px; padding:11px 16px; background:var(--gold-pale); border:1px solid var(--gold-bright); border-radius:8px; font-size:12px; color:#7A5C00; flex-shrink:0; }
+  #s8 .priority-note strong { color:var(--gold-mid); }
+
+  /* ── SLIDE 9: PLAN ── */
+  #s9 { background: var(--white); }
+  #s9 .phases { display:flex; flex-direction:column; gap:16px; flex:1; }
+  #s9 .phase { display:flex; gap:16px; }
+  #s9 .phase-label { min-width:140px; border-radius:10px; padding:16px 14px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+  #s9 .phase-label .pnum { font-size:18px; font-weight:700; color:#fff; }
+  #s9 .phase-label .ptiming { font-size:10px; color:rgba(255,255,255,0.7); margin-top:5px; font-style:italic; }
+  #s9 .phase.ph1 .phase-label { background:var(--gold-mid); }
+  #s9 .phase.ph2 .phase-label { background:var(--navy); }
+  #s9 .tickets { display:grid; grid-template-columns:1fr 1fr; gap:14px; flex:1; }
+  #s9 .ticket { background:var(--gray-bg); border:1px solid var(--border); border-radius:10px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
+  #s9 .ticket-header { padding:9px 14px; font-size:12px; font-weight:700; }
+  #s9 .ph1 .ticket-header { background:var(--gold-pale); color:var(--gold-mid); }
+  #s9 .ph2 .ticket-header { background:var(--indigo-pale); color:var(--navy); }
+  #s9 .ticket-body { padding:12px 14px; font-size:12px; color:var(--slate); line-height:1.65; }
+
+  /* ── SLIDE 10: SUMMARY ── */
+  #s10 { background: var(--navy); }
+  #s10 .left-bar { width:5px; background:var(--gold); position:absolute; left:0; top:0; bottom:0; }
+  #s10 .circle1 { position:absolute; right:-80px; top:-100px; width:500px; height:500px; border-radius:50%; background:var(--navy-mid); opacity:0.5; }
+  #s10 .circle2 { position:absolute; right:80px; bottom:20px; width:280px; height:280px; border-radius:50%; background:var(--gold); opacity:0.08; }
+  #s10 .inner { position:relative; z-index:2; padding:44px 56px; display:flex; flex-direction:column; height:100%; }
+  #s10 h2 { font-family:'DM Serif Display',serif; font-size:clamp(24px,3.2vw,38px); color:#fff; margin-bottom:26px; flex-shrink:0; }
+  #s10 .rows { display:flex; flex-direction:column; gap:10px; flex:1; }
+  #s10 .row { display:flex; align-items:flex-start; gap:18px; }
+  #s10 .row-label { min-width:90px; padding:5px 14px; background:var(--gold-mid); border-radius:6px; font-size:12px; font-weight:700; color:#fff; text-align:center; flex-shrink:0; }
+  #s10 .row-text { font-size:12.5px; color:#C8DCF0; line-height:1.65; padding-top:4px; }
+  #s10 .cta { color:var(--gold-bright); font-size:13px; font-style:italic; margin-top:16px; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ══ SLIDE 1: TITLE ══ -->
+  <div class="slide active" id="s1">
+    <div class="left-bar"></div>
+    <div class="circle1"></div>
+    <div class="circle2"></div>
+    <div class="content">
+      <span class="badge tag">Product Initiative</span>
+      <h1>Nested Refinements<br>Initiative</h1>
+      <p class="sub">How it works · Where it appears · Problems solved · Operationalization plan</p>
+      <p class="presenters">Presented to VP Yaffit Salmanson &amp; VP Naftuli Rieger</p>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 2: WHAT ARE NESTED REFINEMENTS? ══ -->
+  <div class="slide" id="s2">
+    <div class="gold-bar"></div>
+    <div class="slide-inner">
+      <h2 class="slide-title">What Are Nested Refinements?</h2>
+      <div class="two-col">
+        <div class="card">
+          <h3>Rule-Based Refinements</h3>
+          <p>Nested Refinements are a type of <em>conditional rule-based refinement</em> — one of two rule-based types alongside application-based refinements.</p>
+          <p>They introduce a <em>parent-child grouping layer</em> on top of existing spec refinements, enabling structured navigation of large refinement sets.</p>
+        </div>
+        <div class="right-col">
+          <div class="type-card app">
+            <h3>Application-Based</h3>
+            <p>Refinements driven by minimum and maximum requirements set for spec refinements. If an item meets these standards it becomes part of the result set for that application-based refinement category.</p>
+          </div>
+          <div class="type-card cond">
+            <h3>Conditional (Nested Refinements) ←</h3>
+            <p>Dynamic parent-child groupings driven by shared characteristics within a spec refinement's values. Smart, scalable, context-aware.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 3: PROBLEMS WE'RE SOLVING ══ -->
+  <div class="slide" id="s3">
+    <div class="orange-bar"></div>
+    <div class="slide-inner">
+      <h2 class="slide-title">Problems We're Solving</h2>
+      <div class="problems">
+        <div class="problem">
+          <div class="prob-num">1</div>
+          <div class="prob-body">
+            <h3>Poor Scannability</h3>
+            <p>When 100+ refinement values are paginated across multiple pages, customers struggle to form a mental model of available options. They can't quickly assess scope or know what they're selecting against.</p>
+          </div>
+        </div>
+        <div class="problem">
+          <div class="prob-num">2</div>
+          <div class="prob-body">
+            <h3>Pagination Friction</h3>
+            <p>The modal-based "See All" experience forces users to page through long lists. This breaks flow when they're trying to narrow to a precise set of values — every page turn is friction against their goal.</p>
+          </div>
+        </div>
+        <div class="problem">
+          <div class="prob-num">3</div>
+          <div class="prob-body">
+            <h3>Select All &amp; Search Conflicts</h3>
+            <p>"Select All" and search within the refinement interact poorly with pagination — customers think they've selected everything when they haven't, creating confusion and incorrect filtered results.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 4: REFINEMENT TRACKS ══ -->
+  <div class="slide" id="s4">
+    <div class="gold-bar"></div>
+    <div class="slide-inner">
+      <h2 class="slide-title">Refinement Tracks for Large Value Sets</h2>
+      <div class="track-grid">
+
+        <div class="track t1">
+          <div class="track-num">1</div>
+          <span class="condition">Numerical Values</span>
+          <h3>Slider with Min / Max Range</h3>
+          <p>When refinement values are numerical, a range slider is the simplest UI. Customers drag handles to a minimum and maximum, with paired input fields for precise entry — no long list to scan.</p>
+          <div class="slider-visual">
+            <div class="fill"></div>
+            <div class="handle l"></div>
+            <div class="handle r"></div>
+          </div>
+          <div class="slider-inputs">
+            <div class="inp">Min: 1080p</div>
+            <div class="inp">Max: 4K</div>
+          </div>
+          <div class="example">e.g. Price, Weight (lbs), Storage (GB)</div>
+        </div>
+
+        <div class="track t2">
+          <div class="track-num">2</div>
+          <span class="condition">Shared Characteristics</span>
+          <h3>Nested Conditional Refinements</h3>
+          <p>When refinement values share meaningful sub-characteristics, conditional parent groups are created and spec refinement values <strong>nest underneath</strong> their matching parent. Browsing becomes hierarchical and scannable.</p>
+          <div class="tree">
+            <div class="parent">▸ 4K</div>
+            <div class="child">3840 × 2160</div>
+            <div class="child">4096 × 2160</div>
+            <div class="parent">▸ 8K</div>
+            <div class="child">7680 × 4320</div>
+          </div>
+          <div class="example">e.g. Native Resolution grouped by 2K / 4K / 6K / 8K</div>
+        </div>
+
+        <div class="track t3">
+          <div class="track-num">3</div>
+          <span class="condition">Separate Parent</span>
+          <h3>Standalone Conditional Refinement</h3>
+          <p>Some refinements don't benefit from nesting but do benefit from a <strong>separate conditional refinement</strong> as a parent. The conditional refinement stands alone; the spec refinement lives below it as a distinct, independent option.</p>
+          <div class="sep-visual">
+            <div class="sep-parent">Display Resolution (Conditional Refinement)</div>
+            <div class="sep-arrow">↓</div>
+            <div class="sep-below">Native Resolution (Spec Refinement)</div>
+          </div>
+          <div class="example">e.g. a conditional refinement parent with the spec refinement below, not nested</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 5: HOW IT WORKS ══ -->
+  <div class="slide" id="s5">
+    <div class="gold-bar"></div>
+    <div class="slide-inner">
+      <h2 class="slide-title">How It Works</h2>
+      <div class="steps">
+        <div class="step s1">
+          <div class="num">1</div>
+          <h3>Spec Refinement</h3>
+          <p>Start with a spec refinement containing a large set of values (e.g. Native Resolution with 100 values).</p>
+        </div>
+        <div class="step s2">
+          <div class="num">2</div>
+          <h3>Identify Shared Traits</h3>
+          <p>Detect subsets with shared characteristics — e.g. resolutions that are 2K, 4K, 6K, or 8K.</p>
+        </div>
+        <div class="step s3">
+          <div class="num">3</div>
+          <h3>Create Parent Groups</h3>
+          <p>Define conditional parent refinements (2K, 4K, 6K, 8K) that represent those clusters.</p>
+        </div>
+        <div class="step s4">
+          <div class="num">4</div>
+          <h3>Nest Spec Values</h3>
+          <p>The original spec refinement values nest under their matching parent. Browsing becomes hierarchical and scannable.</p>
+        </div>
+      </div>
+      <div class="example-bar">
+        <strong>Example:</strong> Native Resolution spec has 100 values → Parents created: 2K · 4K · 6K · 8K → Each resolution value nests under its parent group.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 6: WHERE IT APPEARS ══ -->
+  <div class="slide" id="s6">
+    <div class="gold-bar"></div>
+    <div class="slide-inner">
+      <h2 class="slide-title">Where It Appears</h2>
+      <div class="two-col">
+        <div class="surface search">
+          <h3>Refinement Panel (Search &amp; Browse)</h3>
+          <p>Customers filtering product listings encounter conditional refinements in the left-rail or inline filter UI. Parent groups are shown first; expanding them reveals spec-level values. The drawer replaces the modal for full-list browsing.</p>
+          <div class="owner">Owned by: Search &amp; Requirements — Yehuda's domain</div>
+        </div>
+        <div class="surface navbar">
+          <h3>Nav Bar — Rule Configuration (BHIA)</h3>
+          <p>The Nav Arc Team accesses a configuration UI within the Nav Bar to create and manage conditional parent refinements and define their relationships to spec refinements.</p>
+          <div class="owner">Owned by: Nav Bar / Internal Tools</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 7: THE SOLUTION ══ -->
+  <div class="slide" id="s7">
+    <div class="gold-bar"></div>
+    <div class="slide-inner">
+      <h2 class="slide-title">The Solution</h2>
+      <div class="solutions">
+        <div class="sol drawer">
+          <h3>Modal → Drawer (See All)</h3>
+          <p>Replace the modal-based "See All" experience with a <strong>drawer</strong>. The drawer eliminates pagination entirely — users scroll vertically through all groups and orphan values. Select All and search state are consistent regardless of list length. This ships first and can run concurrently with the Nav Bar ticket.</p>
+        </div>
+        <div class="sol grouping">
+          <h3>Conditional Parent Groupings</h3>
+          <p>With parent refinements created in the Nav Bar (BHIA ticket), shared-characteristic values are grouped under scannable headers. The spec refinement nests underneath, preserving full detail without overwhelming the customer. The Nav Arc Team defines the rules — the system handles the hierarchy.</p>
+        </div>
+      </div>
+      <div class="ux-note">✓ &nbsp;UX design is complete and approved. Front-end execution is tracked via BHJ ticket.</div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 8: SCALE & ROLLOUT ══ -->
+  <div class="slide" id="s8">
+    <div class="gold-bar"></div>
+    <div class="slide-inner">
+      <h2 class="slide-title">Scale &amp; Rollout</h2>
+      <div class="scale-grid">
+        <div class="stat-card big">
+          <div class="stat-num">370</div>
+          <div class="stat-label">Potential Candidates</div>
+          <div class="stat-sub">Total refinements identified as candidates for nesting. We are targeting priority refinements first — primarily compatibility-based: lens &amp; light, cameras, graphics cards, processors, and similar technical specs where grouping delivers the highest customer value.</div>
+        </div>
+        <div class="stat-card pace">
+          <div class="pace-num">15 / mo</div>
+          <div class="pace-label">Target Pace — First 3 Months</div>
+          <div class="pace-sub">Aiming for 15 refinements configured per month during the initial phase, covering the highest-priority compatibility refinements. Speed increases with team familiarity.</div>
+        </div>
+        <div class="stat-card ramp">
+          <div class="ramp-label">Velocity Ramp</div>
+          <div class="ramp-bars">
+            <div class="ramp-row">
+              <span>Month 1</span>
+              <div class="ramp-bar-bg"><div class="ramp-bar-fill" style="width:30%"></div></div>
+              <span class="ramp-val">~15 refinements</span>
+            </div>
+            <div class="ramp-row">
+              <span>Month 2</span>
+              <div class="ramp-bar-bg"><div class="ramp-bar-fill" style="width:46%"></div></div>
+              <span class="ramp-val">~15 refinements</span>
+            </div>
+            <div class="ramp-row">
+              <span>Month 3</span>
+              <div class="ramp-bar-bg"><div class="ramp-bar-fill" style="width:60%"></div></div>
+              <span class="ramp-val">~15 refinements</span>
+            </div>
+            <div class="ramp-row">
+              <span>Month 4+</span>
+              <div class="ramp-bar-bg"><div class="ramp-bar-fill" style="width:85%"></div></div>
+              <span class="ramp-val">Accelerating</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="priority-note"><strong>Priority categories:</strong> Lens &amp; light compatibility · Camera compatibility · Graphics card specs · Processor specs · Other technical compatibility refinements</div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 9: OPERATIONALIZATION PLAN ══ -->
+  <div class="slide" id="s9">
+    <div class="gold-bar"></div>
+    <div class="slide-inner">
+      <h2 class="slide-title">Operationalization Plan</h2>
+      <div class="phases">
+        <div class="phase ph1">
+          <div class="phase-label">
+            <div class="pnum">Phase 1</div>
+            <div class="ptiming">Sprint N — can run concurrently</div>
+          </div>
+          <div class="tickets">
+            <div class="ticket">
+              <div class="ticket-header">BHJ (UX / Drawer)</div>
+              <div class="ticket-body">Modal → Drawer migration for "See All" experience. Removes pagination; enables smooth scroll across all groups and orphan values. Fixes Select All and search state consistency.</div>
+            </div>
+            <div class="ticket">
+              <div class="ticket-header">BHIA (Nav Bar)</div>
+              <div class="ticket-body">Nav Bar tooling for the Nav Arc Team to create rule-based conditional parent refinements and define their relationship to spec refinements.</div>
+            </div>
+          </div>
+        </div>
+        <div class="phase ph2">
+          <div class="phase-label">
+            <div class="pnum">Phase 2</div>
+            <div class="ptiming">Follow-up Sprint</div>
+          </div>
+          <div class="tickets">
+            <div class="ticket">
+              <div class="ticket-header">BHJ (Front End)</div>
+              <div class="ticket-body">Front-end execution of the approved UX design. Actualizes the full conditional refinement hierarchy in the customer-facing UI.</div>
+            </div>
+            <div class="ticket">
+              <div class="ticket-header">BHJ (Yehuda)</div>
+              <div class="ticket-body">Architectural work under Search &amp; Requirements. Refinement-layer changes to fully support the conditional parent-child spec refinement structure.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 10: SUMMARY ══ -->
+  <div class="slide" id="s10">
+    <div class="left-bar"></div>
+    <div class="circle1"></div>
+    <div class="circle2"></div>
+    <div class="inner">
+      <h2>Summary &amp; Next Steps</h2>
+      <div class="rows">
+        <div class="row"><div class="row-label">What</div><div class="row-text">Conditional rule-based refinements that group large spec refinement value sets under shared-characteristic parents.</div></div>
+        <div class="row"><div class="row-label">Tracks</div><div class="row-text">Numerical → Sliders. Shared characteristics → Nested parents. No shared characteristics but needs a parent → Standalone conditional refinement + spec refinement below.</div></div>
+        <div class="row"><div class="row-label">Where</div><div class="row-text">Customer-facing refinement panel (Search &amp; Reqs / Yehuda) + Nav Bar config tooling for the Nav Arc Team (BHIA).</div></div>
+        <div class="row"><div class="row-label">Why</div><div class="row-text">Eliminate scannability issues, pagination friction, and Select All / search conflicts on large refinement lists.</div></div>
+        <div class="row"><div class="row-label">Scale</div><div class="row-text">370 candidates total. Targeting priority compatibility refinements first — 15/month for the first 3 months, accelerating with familiarity.</div></div>
+        <div class="row"><div class="row-label">Phase 1</div><div class="row-text">Modal → Drawer (BHJ) + Nav Bar rule creation (BHIA) — concurrent sprint.</div></div>
+        <div class="row"><div class="row-label">Phase 2</div><div class="row-text">UX design actualization (BHJ front end) + Yehuda's architectural refinement work (BHJ).</div></div>
+      </div>
+      <p class="cta">UX design approved. Execution ready to begin.</p>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<div class="nav" id="nav">
+  <button id="prev" title="Previous (←)">&#8592;</button>
+  <div class="dots" id="dots"></div>
+  <button id="next" title="Next (→)">&#8594;</button>
+  <span class="counter" id="counter">1 / 10</span>
+</div>
+<div class="key-hint" id="keyHint">← → arrow keys to navigate</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsEl = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  let current = 0;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(d);
+  });
+
+  function goTo(n) {
+    if (n === current) return;
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    const prev = current;
+    current = n;
+    setTimeout(() => slides[prev].classList.remove('exit'), 480);
+    slides[current].classList.add('active');
+    dotsEl.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    counter.textContent = `${current + 1} / ${slides.length}`;
+  }
+
+  document.getElementById('prev').addEventListener('click', () => { if (current > 0) goTo(current - 1); });
+  document.getElementById('next').addEventListener('click', () => { if (current < slides.length - 1) goTo(current + 1); });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { if (current < slides.length - 1) goTo(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { if (current > 0) goTo(current - 1); }
+  });
+
+  setTimeout(() => { const h = document.getElementById('keyHint'); if (h) h.remove(); }, 4500);
+</script>
+</body>
+</html>
