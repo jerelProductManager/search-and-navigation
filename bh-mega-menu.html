@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>B&H Navigation Prototype</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -208,7 +209,7 @@
     border-right: 1px solid var(--divider);
     padding: 12px 0;
     overflow-y: auto;
-    max-height: 520px;
+    max-height: var(--col-max-h, 380px);
   }
 
   .col-heading {
@@ -260,7 +261,7 @@
     padding: 12px 0;
     display: none;
     overflow-y: auto;
-    max-height: 520px;
+    max-height: var(--col-max-h, 380px);
   }
   .col-sub.visible { display: block; }
 
@@ -291,7 +292,7 @@
     padding: 12px 0;
     display: none;
     overflow-y: auto;
-    max-height: 520px;
+    max-height: var(--col-max-h, 380px);
   }
   .col-tertiary.visible { display: block; }
 
@@ -801,14 +802,14 @@
         <!-- items injected by JS -->
       </div>
 
-      <!-- Col 2: sub-categories -->
+      <!-- Col 2: sub-categories (empty until user hovers a Col-1 item) -->
       <div class="col-sub" id="colSub">
-        <div class="col-heading" id="colSubHeading">All Recorders &amp; Duplication</div>
+        <div class="col-heading" id="colSubHeading"></div>
       </div>
 
-      <!-- Col 3: tertiary -->
+      <!-- Col 3: tertiary (empty until user hovers a Col-2 item) -->
       <div class="col-tertiary" id="colTertiary">
-        <div class="col-heading" id="colTertiaryHeading">Sub-category</div>
+        <div class="col-heading" id="colTertiaryHeading"></div>
       </div>
 
       <!-- Col right: contextual links -->
@@ -847,6 +848,7 @@
       <a href="#">Admin ▾</a>
       <a id="adminDetailLink" href="category-detail.html" target="_blank" style="color:#ffe066;font-weight:bold;">Open Category Detail ↗</a>
     </div>
+    <button onclick="downloadExcel()" title="Export navigation data to Excel" style="background:none;border:1px solid #6a8a62;color:#c0d0b8;border-radius:2px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:auto;white-space:nowrap;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#c0d0b8'">⬇ Export Excel</button>
     <button class="admin-collapse-btn" id="adminCollapseBtn" title="Toggle panel">▼</button>
   </div>
 
@@ -1888,8 +1890,13 @@ function openMenu(menuKey, navItem) {
   activeL1 = null;
   activeL2 = null;
 
+  // Hide and fully clear col2/col3 so nothing bleeds in from a prior hover
   colSub.classList.remove('visible');
   colTertiary.classList.remove('visible');
+  Array.from(colSub.children).forEach(c => { if (!c.classList.contains('col-heading')) c.remove(); });
+  colSubHeading.textContent = '';
+  Array.from(colTertiary.children).forEach(c => { if (!c.classList.contains('col-heading')) c.remove(); });
+  colTertiaryHeading.textContent = '';
 
   renderL1(menuKey);
 }
@@ -1964,10 +1971,21 @@ let activeSlotIndex  = null;
 let pendingCatIdItem = null;  // resolved CatID result pending save
 let selectedLabelItem= null;  // selected label item pending save
 
+// ─── COLUMN MAX-HEIGHT (keeps mega menu above admin panel) ───────────────────
+function updateColMaxHeight() {
+  const panelH = adminPanel.classList.contains('collapsed') ? 34 : adminPanel.offsetHeight;
+  const navBottom = navBar.getBoundingClientRect().bottom;
+  const available = window.innerHeight - navBottom - panelH - 16; // 16px breathing room
+  document.documentElement.style.setProperty('--col-max-h', Math.max(120, available) + 'px');
+}
+updateColMaxHeight();
+window.addEventListener('resize', updateColMaxHeight);
+
 // ─── COLLAPSE ────────────────────────────────────────────────────────────────
 adminCollapseBtn.addEventListener('click', () => {
   adminPanel.classList.toggle('collapsed');
   adminCollapseBtn.textContent = adminPanel.classList.contains('collapsed') ? '▲' : '▼';
+  updateColMaxHeight();
 });
 
 // ─── LOAD CATEGORY ───────────────────────────────────────────────────────────
@@ -2561,6 +2579,51 @@ adminSaveBtn.addEventListener('click', () => {
   // re-open same slot to show updated state
   openEditor(adminCurrentKey, activeSlotIndex);
 });
+
+// ─── EXCEL EXPORT ─────────────────────────────────────────────────────────────
+function downloadExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('Excel library not loaded yet — please wait a moment and try again.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: Navigation Departments ──
+  const deptRows = [['Department', 'Menu Key', 'CatID']];
+  // Build from the nav bar items to preserve display order
+  document.querySelectorAll('.nav-item[data-menu]').forEach(el => {
+    const key = el.dataset.menu;
+    const name = el.querySelector('.nav-link').textContent.trim();
+    const catId = Object.entries(CATID_MAP).find(([id, k]) => k === key)?.[0] || '';
+    deptRows.push([name, key, catId]);
+  });
+  const deptSheet = XLSX.utils.aoa_to_sheet(deptRows);
+  deptSheet['!cols'] = [{ wch: 26 }, { wch: 16 }, { wch: 10 }];
+  XLSX.utils.book_append_sheet(wb, deptSheet, 'Departments');
+
+  // ── Sheet 2: Featured Slot Assignments ──
+  const slotRows = [['Department', 'Slot #', 'Featured?', 'Type', 'Label', 'URL / CatID']];
+  Object.entries(featuredItems).forEach(([key, slots]) => {
+    const deptName = document.querySelector(`.nav-item[data-menu="${key}"] .nav-link`)?.textContent.trim() || key;
+    slots.forEach((item, i) => {
+      if (!item) return;
+      slotRows.push([
+        deptName,
+        i + 1,
+        i < 5 ? 'Yes' : 'No',
+        item.type,
+        item.label || '',
+        item.url || item.catId || '',
+      ]);
+    });
+  });
+  const slotSheet = XLSX.utils.aoa_to_sheet(slotRows);
+  slotSheet['!cols'] = [{ wch: 24 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 36 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, slotSheet, 'Featured Slot Assignments');
+
+  XLSX.writeFile(wb, 'BH_MegaMenu_Data.xlsx');
+}
 
 </script>
 </body>
