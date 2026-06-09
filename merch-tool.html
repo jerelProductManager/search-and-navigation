@@ -15,6 +15,9 @@
   <!-- Babel standalone (transpiles JSX in-browser) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
     html, body, #root { height: 100%; margin: 0; padding: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -784,6 +787,252 @@ function MegaMenuPreview({ activeCat, catData, taxonomy }) {
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
 const POLL_INTERVAL = 15000; // 15 seconds
 
+// ── HELP MODAL ──────────────────────────────────────────────────────────────
+function HelpModal({ onClose }) {
+  const [openSection, setOpenSection] = useState(null);
+  const toggle = (id) => setOpenSection(prev => prev === id ? null : id);
+
+  const Section = ({ id, title, children }) => {
+    const isOpen = openSection === id;
+    return (
+      <div style={{ borderBottom:"1px solid #e5e7eb" }}>
+        <button onClick={() => toggle(id)}
+          style={{ width:"100%", textAlign:"left", padding:"10px 16px", display:"flex",
+            alignItems:"center", justifyContent:"space-between", cursor:"pointer",
+            background: isOpen ? "#f0fdf4" : "#f9fafb", border:"none",
+            borderLeft: isOpen ? "3px solid #10b981" : "3px solid transparent",
+            fontWeight:700, fontSize:12, color: isOpen ? "#065f46" : "#374151" }}
+          onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background="#f3f4f6"; }}
+          onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background="#f9fafb"; }}>
+          {title}
+          <span style={{ fontSize:10, color:"#9ca3af", transition:"transform 0.15s",
+            display:"inline-block", transform: isOpen ? "rotate(90deg)" : "none" }}>▶</span>
+        </button>
+        {isOpen && (
+          <div style={{ padding:"12px 18px 14px", fontSize:12, lineHeight:1.7,
+            color:"#374151", background:"white" }}>
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const Note = ({ children, warn }) => (
+    <div style={{ background: warn ? "#fffbeb" : "#f0fdf4",
+      borderLeft: `3px solid ${warn ? "#f59e0b" : "#10b981"}`,
+      padding:"8px 12px", margin:"8px 0", fontSize:11, color:"#374151", borderRadius:"0 4px 4px 0" }}>
+      {children}
+    </div>
+  );
+
+  const Step = ({ n, children }) => (
+    <div style={{ display:"flex", gap:10, marginBottom:6, alignItems:"flex-start" }}>
+      <span style={{ background:"#3f9a59", color:"white", borderRadius:3, width:18, height:18,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        fontSize:10, fontWeight:700, flexShrink:0, marginTop:1 }}>{n}</span>
+      <span>{children}</span>
+    </div>
+  );
+
+  const B = ({ children }) => <strong style={{ color:"#111827" }}>{children}</strong>;
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:9999,
+        display:"flex", alignItems:"flex-start", justifyContent:"center", padding:"32px 16px 16px", overflowY:"auto" }}>
+      <div style={{ background:"white", borderRadius:12, width:"100%", maxWidth:720,
+        maxHeight:"calc(100vh - 64px)", display:"flex", flexDirection:"column",
+        boxShadow:"0 20px 60px rgba(0,0,0,0.25)", overflow:"hidden" }}>
+
+        {/* Header */}
+        <div style={{ background:"#3f9a59", padding:"12px 18px", display:"flex",
+          alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+          <div>
+            <div style={{ fontWeight:800, fontSize:14, color:"white", letterSpacing:0.3 }}>
+              📖 Mega Menu Merchandising Tool — User Guide
+            </div>
+            <div style={{ fontSize:11, color:"#bbf7d0", marginTop:2 }}>
+              Click any section below to expand it
+            </div>
+          </div>
+          <button onClick={onClose}
+            style={{ background:"none", border:"1px solid rgba(255,255,255,0.4)", color:"white",
+              borderRadius:4, width:26, height:26, cursor:"pointer", fontSize:14, display:"flex",
+              alignItems:"center", justifyContent:"center" }}>✕</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ overflowY:"auto", flex:1 }}>
+
+          <Section id="overview" title="Overview — What this tool does">
+            <p>The <B>B&H Mega Menu Merchandising Tool</B> is a shared admin workspace for configuring
+            the product navigation menus that customers see on bhphotovideo.com. Multiple team members
+            can use it simultaneously — every save is timestamped and attributed to the person who made it.</p>
+            <p style={{marginTop:8}}>The tool has two modes:</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li><B>Admin mode</B> — drag-and-drop slot editor for configuring each department's menu.</li>
+              <li><B>Preview mode</B> — a live simulation of how the mega menu looks to customers, with full multi-level hover behaviour.</li>
+            </ul>
+            <Note>When you first open the tool you will be asked to enter your name. This is used to track who last saved each category — it is not stored permanently.</Note>
+          </Section>
+
+          <Section id="sidebar" title="Left Sidebar — Category Navigation">
+            <p>The green left sidebar lists all <B>13 departments</B> (Photography, Computers, Pro Video, etc.).
+            Click any department button to load its slot configuration in the main panel.</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li>Each button shows a <B>badge</B> counting how many of the 30 L2 slots are filled.</li>
+              <li>The currently active department is highlighted with a darker background.</li>
+              <li>The bottom of the sidebar shows <B>sync status</B>: a yellow dot means a save is in progress,
+              white means saved, and red means an error occurred. The tool auto-saves after each edit and
+              polls for remote changes every 15 seconds.</li>
+            </ul>
+          </Section>
+
+          <Section id="levels" title="Level Tabs — L2 / L3 / L4">
+            <p>The header bar contains three level tabs. Each level corresponds to a depth in the B&H
+            product taxonomy:</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li><B>L2</B> — Top-level subcategories within a department (e.g. "Digital Cameras" under Photography).
+              This is the primary configuration level and the one most users work with.</li>
+              <li><B>L3</B> — Sub-categories within an L2 item. Configure these when you want
+              the mega menu flyout for a specific L2 item to show a curated list rather than the default taxonomy.</li>
+              <li><B>L4</B> — Sub-sub-categories within an L3 item. Same idea, one level deeper.</li>
+            </ul>
+            <Note>L3 and L4 panels show a <B>parent picker</B> at the top — click an L2 (or L3) item to
+            select which parent's children you are configuring.</Note>
+          </Section>
+
+          <Section id="slots" title="Featured & Non-featured Slots">
+            <p>Each level has <B>30 configurable slots</B>, split into two sections:</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li><B>★ Featured Categories (Slots 1–5)</B> — amber-accented panel at the top.
+              Items here are pinned at the top of the mega menu column and are the most prominent.
+              The badge shows how many of the 5 featured slots are filled (e.g. "3/5").</li>
+              <li><B>≡ Non-featured Categories (Slots 6–30)</B> — gray panel below.
+              These appear after the featured items in the menu. Any taxonomy level (L2–L7) or
+              a label header can go here.</li>
+            </ul>
+            <Note>Empty slots are skipped — the menu renders only filled slots, so gaps are harmless.</Note>
+          </Section>
+
+          <Section id="taxonomy" title="Taxonomy Panel — Adding Items to Slots">
+            <p>The <B>right panel</B> is the taxonomy browser. It shows the full B&H product hierarchy
+            for the active department, organized into named groups.</p>
+            <p style={{marginTop:8}}><B>Adding an item — two ways:</B></p>
+            <Step n={1}>Find the item in the taxonomy tree (expand nodes with ▸) or use the
+            <B> search box</B> at the top (type at least 2 characters to filter by name or CatID).</Step>
+            <Step n={2}>Either <B>drag</B> the item from the panel and drop it onto an empty slot (dashed border),
+            or click the <B>"+"</B> button to add it to the next available empty slot.</Step>
+            <Step n={3}>A ✓ checkmark replaces "+" on items already in use — they appear faded to prevent duplicates.</Step>
+            <p style={{marginTop:8}}><B>Level color coding</B> (colored dots):</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li><span style={{color:"#10b981", fontWeight:700}}>●</span> L2 — emerald green</li>
+              <li><span style={{color:"#3b82f6", fontWeight:700}}>●</span> L3 — blue</li>
+              <li><span style={{color:"#8b5cf6", fontWeight:700}}>●</span> L4 — violet</li>
+              <li><span style={{color:"#f59e0b", fontWeight:700}}>●</span> L5 — amber</li>
+              <li><span style={{color:"#ef4444", fontWeight:700}}>●</span> L6 — red</li>
+              <li><span style={{color:"#ec4899", fontWeight:700}}>●</span> L7 — pink</li>
+              <li><span style={{color:"#64748b", fontWeight:700}}>●</span> Label — slate (section header)</li>
+            </ul>
+          </Section>
+
+          <Section id="slots-edit" title="Managing Existing Slots">
+            <p><B>Reordering:</B> Drag a filled slot row up or down within the panel to change its position.
+            Dragging a row into slots 1–5 makes it featured; dragging below slot 5 removes featured status.</p>
+            <p style={{marginTop:8}}><B>Removing an item:</B> Click the <B>✕</B> button on the right of
+            any slot row to clear it.</p>
+            <p style={{marginTop:8}}><B>Swapping:</B> Drag a taxonomy item onto a slot that is already
+            filled — the new item replaces the existing one.</p>
+          </Section>
+
+          <Section id="explora" title="Explora Article Links">
+            <p>Each slot can optionally link to a <B>B&H Explora article</B> (buying guide, hands-on review, etc.).
+            This link appears alongside the category name in the mega menu.</p>
+            <Step n={1}>Click the <B>🔗</B> icon (or the "+ link" text) on any slot row.</Step>
+            <Step n={2}>Paste the Explora URL (must start with https://www.bhphotovideo.com/explora/).</Step>
+            <Step n={3}>Click <B>Save Link</B>. Click <B>Clear</B> to remove an existing link.</Step>
+          </Section>
+
+          <Section id="utility" title="Utility Column — Buying Guide">
+            <p>Below the slot panels (in L2 admin view) is the <B>Utility Column</B> section. It contains:</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li>Read-only utility links (Specials, Used Items, New Arrivals, Buying Guide, Talk to an Expert)
+              — these always appear in the contextual column of the mega menu and cannot be edited here.</li>
+              <li>A <B>Buying Guide URL</B> input — paste a URL and press Enter (or click away) to save a
+              department-level buying guide link.</li>
+            </ul>
+          </Section>
+
+          <Section id="preview" title="Preview Mode">
+            <p>Click <B>👁 Preview</B> in the header to switch to a simulated customer view of the mega menu.
+            The preview reflects your current saved configuration.</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li>Hover over items in Column 1 to see L3 flyouts in Column 2.</li>
+              <li>Hover Column 2 items to see L4 flyouts in Column 3.</li>
+              <li>The rightmost column always shows the contextual utility links.</li>
+              <li>Click <B>⚙ Admin</B> to return to the editor.</li>
+            </ul>
+          </Section>
+
+          <Section id="autosave" title="Auto-Save &amp; Sync">
+            <p>The tool <B>auto-saves 800ms after your last edit</B> — you do not need to click a save button.
+            The save status indicator in the left sidebar shows:</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li><B>Yellow dot / "Saving…"</B> — write in progress.</li>
+              <li><B>White dot / "Saved"</B> — successfully persisted to browser storage.</li>
+              <li><B>Red dot / "Error"</B> — the save failed; try refreshing.</li>
+            </ul>
+            <p style={{marginTop:8}}>The tool also <B>polls for remote changes every 15 seconds</B>. If another
+            user saves a more recent version, it is merged in automatically. A blue dot appears briefly
+            during the poll.</p>
+            <Note warn>Data is stored in your browser's localStorage — it is specific to this browser and device.
+            Use ⬇ Export Excel to back up your configuration before clearing browser data.</Note>
+          </Section>
+
+          <Section id="export" title="Exporting to Excel">
+            <p>Click <B>⬇ Export Excel</B> in the header bar to download <B>BH_MerchTool_Data.xlsx</B>.
+            The workbook has four sheets:</p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li><B>L2 Slots</B> — all filled L2 slots across every department: category, slot number,
+              featured flag, level, label, CatID, and any Explora URL.</li>
+              <li><B>L3 Slots</B> — all configured L3 slots, with their L2 parent label and CatID.</li>
+              <li><B>L4 Slots</B> — all configured L4 slots, with their L3 parent CatID.</li>
+              <li><B>Buying Guides</B> — the buying guide URL for each department, plus who last saved it and when.</li>
+            </ul>
+            <Note>The export reflects the current in-memory state — no need to wait for the auto-save
+            indicator before exporting.</Note>
+          </Section>
+
+          <Section id="reset" title="Reset &amp; Keyboard Tips">
+            <p><B>Reset:</B> The red "Reset" button in the header clears all 30 slots for the
+            currently active level (L2, L3, or L4) of the active department. You will be asked to
+            confirm before anything is deleted. This action cannot be undone — export first if in doubt.</p>
+            <p style={{marginTop:8}}><B>Tips:</B></p>
+            <ul style={{marginLeft:18, marginTop:4}}>
+              <li>Press <kbd style={{background:"#f3f4f6",border:"1px solid #d1d5db",borderRadius:3,padding:"1px 5px",fontFamily:"monospace",fontSize:11}}>Esc</kbd> to close this help panel or the Explora URL dialog.</li>
+              <li>In the name entry modal, press Enter to confirm your name.</li>
+              <li>In the buying guide URL field, press Enter to save without clicking away.</li>
+              <li>Refresh the page before the auto-save fires to undo the last unsaved edit.</li>
+            </ul>
+          </Section>
+
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding:"10px 18px", borderTop:"1px solid #e5e7eb", background:"#f9fafb",
+          display:"flex", justifyContent:"flex-end", flexShrink:0 }}>
+          <button onClick={onClose}
+            style={{ fontSize:12, fontWeight:700, color:"white", background:"#3f9a59",
+              padding:"7px 22px", borderRadius:8, cursor:"pointer", border:"none" }}
+            onMouseEnter={e => e.currentTarget.style.background="#2d7a47"}
+            onMouseLeave={e => e.currentTarget.style.background="#3f9a59"}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [userName, setUserName] = useState("");
   const [nameInput, setNameInput] = useState("");
@@ -808,6 +1057,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // null | "saving" | "saved" | "error"
+  const [showHelp, setShowHelp] = useState(false);
   const [lastPoll, setLastPoll] = useState(null);
   const debounceRef = useRef(null);
   const pendingSaveRef = useRef(null);
@@ -980,6 +1230,77 @@ function App() {
     const levelLabel = levelTab === "l3" ? "L3" : levelTab === "l4" ? "L4" : "L2";
     if (!confirm(`Reset all ${levelLabel} slots for ${cat.heading}?`)) return;
     updateSlots(s => { for (let i = 0; i < 30; i++) s[i] = null; });
+  };
+
+  const downloadExcel = () => {
+    if (typeof XLSX === 'undefined') {
+      alert('Excel library not loaded — please wait a moment and try again.');
+      return;
+    }
+    const wb = XLSX.utils.book_new();
+
+    // ── Sheet 1: L2 Slots ──
+    const l2Rows = [['Category','CatID','Slot #','Featured?','Level','Label','Slot CatID','Explora URL']];
+    CAT_KEYS.forEach(slug => {
+      const c = TAXONOMY[slug];
+      (catData[slug]?.slots || []).forEach((slot, i) => {
+        if (!slot) return;
+        l2Rows.push([c.heading, c.catId, i+1, i<5?'Yes':'No',
+          slot.level==='label'?'Label':`L${slot.level}`,
+          slot.label, slot.catId, slot.explorerUrl||'']);
+      });
+    });
+    const s1 = XLSX.utils.aoa_to_sheet(l2Rows);
+    s1['!cols'] = [{wch:22},{wch:8},{wch:7},{wch:9},{wch:7},{wch:36},{wch:14},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, s1, 'L2 Slots');
+
+    // ── Sheet 2: L3 Slots ──
+    const l3Rows = [['Category','L2 Parent Label','L2 Parent CatID','Slot #','Featured?','Level','Label','Slot CatID']];
+    CAT_KEYS.forEach(slug => {
+      const c = TAXONOMY[slug];
+      const l2Slots = catData[slug]?.slots || [];
+      Object.entries(catData[slug]?.slotsL3 || {}).forEach(([l2CatId, slots]) => {
+        const parent = l2Slots.find(s => s && s.catId === l2CatId);
+        (slots||[]).forEach((slot, i) => {
+          if (!slot) return;
+          l3Rows.push([c.heading, parent?.label||'', l2CatId, i+1, i<5?'Yes':'No',
+            slot.level==='label'?'Label':`L${slot.level}`, slot.label, slot.catId]);
+        });
+      });
+    });
+    const s2 = XLSX.utils.aoa_to_sheet(l3Rows);
+    s2['!cols'] = [{wch:22},{wch:30},{wch:14},{wch:7},{wch:9},{wch:7},{wch:36},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, s2, 'L3 Slots');
+
+    // ── Sheet 3: L4 Slots ──
+    const l4Rows = [['Category','L3 Parent CatID','Slot #','Featured?','Level','Label','Slot CatID']];
+    CAT_KEYS.forEach(slug => {
+      const c = TAXONOMY[slug];
+      Object.entries(catData[slug]?.slotsL4 || {}).forEach(([l3CatId, slots]) => {
+        (slots||[]).forEach((slot, i) => {
+          if (!slot) return;
+          l4Rows.push([c.heading, l3CatId, i+1, i<5?'Yes':'No',
+            slot.level==='label'?'Label':`L${slot.level}`, slot.label, slot.catId]);
+        });
+      });
+    });
+    const s3 = XLSX.utils.aoa_to_sheet(l4Rows);
+    s3['!cols'] = [{wch:22},{wch:14},{wch:7},{wch:9},{wch:7},{wch:36},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, s3, 'L4 Slots');
+
+    // ── Sheet 4: Buying Guides + Save Info ──
+    const bgRows = [['Category','CatID','Buying Guide URL','Last Saved By','Last Saved At']];
+    CAT_KEYS.forEach(slug => {
+      const c = TAXONOMY[slug];
+      const d = catData[slug];
+      bgRows.push([c.heading, c.catId, d?.buyingGuideUrl||'', d?.savedBy||'',
+        d?.savedAt ? new Date(d.savedAt).toLocaleString() : '']);
+    });
+    const s4 = XLSX.utils.aoa_to_sheet(bgRows);
+    s4['!cols'] = [{wch:22},{wch:8},{wch:50},{wch:20},{wch:22}];
+    XLSX.utils.book_append_sheet(wb, s4, 'Buying Guides');
+
+    XLSX.writeFile(wb, 'BH_MerchTool_Data.xlsx');
   };
 
   const saveBuyingGuideUrl = useCallback(async (url) => {
@@ -1207,6 +1528,20 @@ function App() {
                   </span>
                 ))}
               </div>
+              <button onClick={downloadExcel}
+                style={{ fontSize:11, color:"#6b7280", padding:"4px 10px", borderRadius:4, cursor:"pointer", flexShrink:0, border:"1px solid #e5e7eb", background:"white" }}
+                onMouseEnter={e => { e.currentTarget.style.color="#065f46"; e.currentTarget.style.borderColor="#10b981"; }}
+                onMouseLeave={e => { e.currentTarget.style.color="#6b7280"; e.currentTarget.style.borderColor="#e5e7eb"; }}
+                title="Export all slot data to Excel">
+                ⬇ Export Excel
+              </button>
+              <button onClick={() => setShowHelp(true)}
+                style={{ fontSize:11, color:"#6b7280", padding:"4px 10px", borderRadius:4, cursor:"pointer", flexShrink:0, border:"1px solid #e5e7eb", background:"white" }}
+                onMouseEnter={e => { e.currentTarget.style.color="#1d4ed8"; e.currentTarget.style.borderColor="#3b82f6"; }}
+                onMouseLeave={e => { e.currentTarget.style.color="#6b7280"; e.currentTarget.style.borderColor="#e5e7eb"; }}
+                title="Open instruction manual">
+                📖 Help
+              </button>
               <button onClick={resetCat}
                 style={{ fontSize:11, color:"#9ca3af", padding:"4px 8px", borderRadius:4, cursor:"pointer", flexShrink:0 }}
                 onMouseEnter={e => { e.currentTarget.style.color="#ef4444"; e.currentTarget.style.background="#fef2f2"; }}
@@ -1629,6 +1964,9 @@ function App() {
           </div>
         </div>
       )}
+      {/* ── HELP MODAL ── */}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
