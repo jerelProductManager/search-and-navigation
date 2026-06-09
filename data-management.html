@@ -154,7 +154,82 @@ a:hover { text-decoration: underline; }
 .save-status { font-size: 12px; color: #2a6a2a; font-weight: bold; }
 .unsaved-badge { background: #cc6600; color: #fff; font-size: 10px; border-radius: 2px; padding: 1px 6px; font-weight: bold; display: none; }
 .unsaved-badge.show { display: inline-block; }
+
+/* ── TITLE BAR BUTTONS (Export + Help) ── */
+.btn-titlebar {
+  background: var(--white); border: 1px solid var(--border);
+  padding: 4px 12px; font-size: 12px; cursor: pointer;
+  color: var(--text); white-space: nowrap; font-family: Arial, sans-serif;
+}
+.btn-titlebar:hover { background: var(--cream2); border-color: var(--green2); }
+
+/* ── HELP MODAL ── */
+.help-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 2000;
+  align-items: flex-start; justify-content: center;
+  padding: 32px 16px 16px;
+}
+.help-overlay.open { display: flex; }
+.help-modal {
+  background: var(--white); border: 1px solid var(--border);
+  width: 100%; max-width: 760px; max-height: calc(100vh - 64px);
+  display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.help-modal-header {
+  background: var(--green); color: var(--white);
+  padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.help-modal-title { font-size: 15px; font-weight: bold; letter-spacing: 0.2px; }
+.help-modal-close {
+  background: none; border: 1px solid rgba(255,255,255,0.4); color: var(--white);
+  font-size: 16px; line-height: 1; padding: 2px 8px; cursor: pointer;
+}
+.help-modal-close:hover { background: rgba(255,255,255,0.15); }
+.help-modal-body { overflow-y: auto; padding: 0; flex: 1; font-size: 12px; line-height: 1.65; color: var(--text); }
+.help-section { border-bottom: 1px solid var(--border2); }
+.help-section-header {
+  background: var(--tbl-hdr); border-bottom: 1px solid var(--border);
+  padding: 7px 16px; font-size: 13px; font-weight: bold; color: var(--text);
+  cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  user-select: none;
+}
+.help-section-header:hover { background: var(--cream2); }
+.help-section-header .h-arrow { font-size: 10px; transition: transform 0.15s; }
+.help-section-header.open .h-arrow { transform: rotate(90deg); }
+.help-section-body { display: none; padding: 14px 18px; background: var(--white); }
+.help-section-body.open { display: block; }
+.help-section-body p { margin-bottom: 9px; }
+.help-section-body p:last-child { margin-bottom: 0; }
+.help-section-body ul { margin: 6px 0 10px 18px; }
+.help-section-body li { margin-bottom: 5px; }
+.help-section-body strong { color: var(--text); }
+.help-note {
+  background: var(--cream); border-left: 3px solid var(--green2);
+  padding: 8px 12px; margin: 10px 0; font-size: 11px; color: #444;
+}
+.help-step { display: flex; gap: 10px; margin-bottom: 7px; align-items: flex-start; }
+.help-step-num {
+  background: var(--green); color: var(--white); font-size: 10px; font-weight: bold;
+  min-width: 18px; height: 18px; border-radius: 2px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+.help-kbd {
+  background: #f4f4f4; border: 1px solid #ccc; border-radius: 3px;
+  padding: 1px 5px; font-family: 'Courier New', monospace; font-size: 11px; color: #333;
+}
+.help-modal-footer {
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  background: var(--tbl-hdr); display: flex; justify-content: flex-end; flex-shrink: 0;
+}
+.help-close-btn {
+  background: var(--white); border: 1px solid var(--border);
+  padding: 5px 20px; font-size: 12px; font-weight: bold; cursor: pointer;
+}
+.help-close-btn:hover { background: var(--cream2); border-color: var(--green2); }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -199,6 +274,10 @@ a:hover { text-decoration: underline; }
       <a href="bh-mega-menu.html" style="font-size:12px;">← Nav Preview</a>
       <span style="color:#bbb;">|</span>
       <a href="category-detail.html" style="font-size:12px;" id="detailLink">Category Detail</a>
+      <span style="color:#bbb;">|</span>
+      <button class="btn-titlebar" onclick="downloadExcel()">⬇ Export Excel</button>
+      <span style="color:#bbb;">|</span>
+      <button class="btn-titlebar" onclick="openHelp()">📖 Help</button>
     </div>
   </div>
 
@@ -321,6 +400,160 @@ a:hover { text-decoration: underline; }
   <span class="save-status" id="saveStatus"></span>
   <span style="font-size:11px;color:#666;margin-left:auto;">Changes are auto-synced to Nav Preview and Category Detail pages.</span>
 </div>
+
+<!-- ── HELP MODAL ── -->
+<div class="help-overlay" id="helpOverlay" onclick="handleOverlayClick(event)">
+  <div class="help-modal" id="helpModal">
+
+    <div class="help-modal-header">
+      <span class="help-modal-title">📖 B&amp;H Data Management — User Guide</span>
+      <button class="help-modal-close" onclick="closeHelp()" title="Close">✕</button>
+    </div>
+
+    <div class="help-modal-body">
+
+      <!-- OVERVIEW -->
+      <div class="help-section">
+        <div class="help-section-header open" onclick="toggleHelpSection(this)">
+          Overview <span class="h-arrow">▶</span>
+        </div>
+        <div class="help-section-body open">
+          <p>The <strong>Data Management</strong> page is the central place for maintaining the navigation structure used across B&amp;H's category-browsing tools. From here you can manage two types of data:</p>
+          <ul>
+            <li><strong>Navigation Categories</strong> — the top-level departments (e.g. Photography, Computers) that appear in the green nav bar.</li>
+            <li><strong>Child Category Labels</strong> — sub-section labels within each department, used when assigning <em>Label</em>-type featured slots in the merch tool.</li>
+          </ul>
+          <p>All changes are stored in your browser and instantly reflected in the <strong>Nav Preview</strong> and <strong>Category Detail</strong> pages — no page reload required.</p>
+        </div>
+      </div>
+
+      <!-- NAVIGATION CATEGORIES -->
+      <div class="help-section">
+        <div class="help-section-header" onclick="toggleHelpSection(this)">
+          Navigation Categories <span class="h-arrow">▶</span>
+        </div>
+        <div class="help-section-body">
+          <p>The table on the left lists every top-level department. Each entry has a <strong>Category Name</strong> and a <strong>CatID</strong> — the numeric identifier used by the B&amp;H catalog system.</p>
+
+          <p><strong>Edit a category</strong></p>
+          <div class="help-step"><span class="help-step-num">1</span><span>Click <em>Edit</em> on the row you want to change. The row turns yellow and both fields become editable.</span></div>
+          <div class="help-step"><span class="help-step-num">2</span><span>Update the Category Name and/or CatID as needed.</span></div>
+          <div class="help-step"><span class="help-step-num">3</span><span>Click <em>Save</em> to apply, or <em>Cancel</em> (or press <span class="help-kbd">Esc</span>) to discard.</span></div>
+
+          <p style="margin-top:10px;"><strong>Add a category</strong></p>
+          <div class="help-step"><span class="help-step-num">1</span><span>Click <em>+ Add Category</em> at the bottom of the table to reveal the add form.</span></div>
+          <div class="help-step"><span class="help-step-num">2</span><span>Enter the Category Name (required) and optional CatID.</span></div>
+          <div class="help-step"><span class="help-step-num">3</span><span>Click <em>Add</em> or press <span class="help-kbd">Enter</span> in the CatID field to confirm.</span></div>
+
+          <p style="margin-top:10px;"><strong>Remove a category</strong></p>
+          <div class="help-step"><span class="help-step-num">1</span><span>Click <em>Remove</em> on the row you want to delete.</span></div>
+          <div class="help-step"><span class="help-step-num">2</span><span>Confirm the browser prompt. The category is removed immediately.</span></div>
+
+          <div class="help-note">⚠ CatIDs must be unique. Attempting to add a category with a CatID that already exists will show an inline error.</div>
+        </div>
+      </div>
+
+      <!-- CHILD CATEGORY LABELS -->
+      <div class="help-section">
+        <div class="help-section-header" onclick="toggleHelpSection(this)">
+          Child Category Labels <span class="h-arrow">▶</span>
+        </div>
+        <div class="help-section-body">
+          <p>The <strong>Child Category Labels</strong> section manages the sub-section headings available within each department. These labels appear as selectable options when assigning <em>Label</em>-type featured slots in the Merch Tool.</p>
+
+          <p><strong>Select a category</strong></p>
+          <p>Use the <em>Category</em> dropdown at the top of the section to switch between departments. The label table updates immediately.</p>
+
+          <p style="margin-top:10px;"><strong>Edit a label</strong></p>
+          <div class="help-step"><span class="help-step-num">1</span><span>Click <em>Edit</em> on the label row you want to change. The row turns yellow.</span></div>
+          <div class="help-step"><span class="help-step-num">2</span><span>Update the Label Name and/or optional ID# field.</span></div>
+          <div class="help-step"><span class="help-step-num">3</span><span>Click <em>Save</em> to confirm, or <em>Cancel</em> (or <span class="help-kbd">Esc</span>) to discard.</span></div>
+
+          <p style="margin-top:10px;"><strong>Add a label</strong></p>
+          <div class="help-step"><span class="help-step-num">1</span><span>Click <em>+ Add Label</em> at the bottom of the labels table.</span></div>
+          <div class="help-step"><span class="help-step-num">2</span><span>Enter the Label Name (required) and an optional ID# for system reference.</span></div>
+          <div class="help-step"><span class="help-step-num">3</span><span>Click <em>Add</em> or press <span class="help-kbd">Enter</span> in the ID# field to confirm.</span></div>
+
+          <p style="margin-top:10px;"><strong>Remove a label</strong></p>
+          <div class="help-step"><span class="help-step-num">1</span><span>Click <em>Remove</em> on the label row and confirm the browser prompt.</span></div>
+
+          <div class="help-note">💡 Labels belong to a specific category. Switching the dropdown shows only that category's labels — other categories are unaffected.</div>
+        </div>
+      </div>
+
+      <!-- SAVING CHANGES -->
+      <div class="help-section">
+        <div class="help-section-header" onclick="toggleHelpSection(this)">
+          Saving Changes <span class="h-arrow">▶</span>
+        </div>
+        <div class="help-section-body">
+          <p>Changes you make are held in memory until you explicitly save. An <strong>orange "Unsaved changes" badge</strong> appears in the table header whenever there are pending edits.</p>
+          <p><strong>To save:</strong> click the <em>Save All Changes</em> button in the sticky bar at the bottom of the page. A green confirmation message appears briefly to confirm success.</p>
+          <p>Once saved, changes are automatically reflected in:</p>
+          <ul>
+            <li><strong>Nav Preview</strong> (bh-mega-menu.html) — the live mega-menu navigation display.</li>
+            <li><strong>Category Detail</strong> (category-detail.html) — the per-category featured slots editor.</li>
+          </ul>
+          <div class="help-note">⚠ <strong>Browser storage:</strong> All data is saved to your browser's localStorage. Clearing browser data or switching to a different browser will reset everything back to the original seed data. This tool does not connect to a backend server.</div>
+        </div>
+      </div>
+
+      <!-- EXCEL EXPORT -->
+      <div class="help-section">
+        <div class="help-section-header" onclick="toggleHelpSection(this)">
+          Exporting to Excel <span class="h-arrow">▶</span>
+        </div>
+        <div class="help-section-body">
+          <p>Click <strong>⬇ Export Excel</strong> in the top-right of the page to download the current data as <strong>BH_Navigation_Data.xlsx</strong>.</p>
+          <p>The workbook contains two sheets:</p>
+          <ul>
+            <li><strong>Navigation Categories</strong> — all departments with their Category Name and CatID.</li>
+            <li><strong>Child Category Labels</strong> — every label across all departments, with columns for Category, CatID, Label Name, and ID#.</li>
+          </ul>
+          <div class="help-note">💡 The export reflects the <em>current in-memory state</em>, including any unsaved edits. You do not need to click <em>Save All Changes</em> before exporting.</div>
+        </div>
+      </div>
+
+      <!-- NAVIGATION -->
+      <div class="help-section">
+        <div class="help-section-header" onclick="toggleHelpSection(this)">
+          Navigating to Other Pages <span class="h-arrow">▶</span>
+        </div>
+        <div class="help-section-body">
+          <p>The top-right of the page title bar provides quick links:</p>
+          <ul>
+            <li><strong>← Nav Preview</strong> — opens bh-mega-menu.html, the live navigation bar preview that reads from the same localStorage data.</li>
+            <li><strong>Category Detail</strong> — opens category-detail.html for the last category you visited, where you can manage featured slots, banners, and other per-category content.</li>
+          </ul>
+          <p>The sub-navigation bar at the top also links to <strong>Item Navigation</strong>, <strong>Saved Reports</strong>, <strong>Data Management</strong> (this page), and <strong>Admin</strong>.</p>
+        </div>
+      </div>
+
+      <!-- TIPS -->
+      <div class="help-section">
+        <div class="help-section-header" onclick="toggleHelpSection(this)">
+          Tips &amp; Keyboard Shortcuts <span class="h-arrow">▶</span>
+        </div>
+        <div class="help-section-body">
+          <ul>
+            <li>Press <span class="help-kbd">Esc</span> at any time to cancel an active inline edit in either table.</li>
+            <li>Press <span class="help-kbd">Enter</span> in the CatID or ID# field of an Add form to confirm the new row without clicking the button.</li>
+            <li>Only one row can be in edit mode at a time per table.</li>
+            <li>The <em>+ Add Category</em> and <em>+ Add Label</em> forms auto-focus their first input when opened.</li>
+            <li>If you accidentally remove a row, refresh the page <em>before saving</em> to restore the last saved state.</li>
+          </ul>
+          <div class="help-note">🔄 <strong>Resetting to defaults:</strong> To restore all original seed data, open your browser's DevTools Console and run: <code>localStorage.removeItem('bh_dm_state')</code>, then refresh the page.</div>
+        </div>
+      </div>
+
+    </div><!-- /help-modal-body -->
+
+    <div class="help-modal-footer">
+      <button class="help-close-btn" onclick="closeHelp()">Close</button>
+    </div>
+
+  </div><!-- /help-modal -->
+</div><!-- /help-overlay -->
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -617,6 +850,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     cancelCatEdit();
     cancelLblEdit();
+    closeHelp();
   }
 });
 
@@ -625,6 +859,65 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════
 function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELP MODAL
+// ═══════════════════════════════════════════════════════════
+
+function openHelp() {
+  document.getElementById('helpOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHelp() {
+  document.getElementById('helpOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('helpOverlay')) closeHelp();
+}
+
+function toggleHelpSection(header) {
+  const body  = header.nextElementSibling;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXCEL EXPORT
+// ═══════════════════════════════════════════════════════════
+
+function downloadExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('Excel library not loaded yet — please wait a moment and try again.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Navigation Categories
+  const catRows = [['Category Name', 'CatID']];
+  cats.forEach(cat => catRows.push([cat.name, cat.catId || '']));
+  const catSheet = XLSX.utils.aoa_to_sheet(catRows);
+  catSheet['!cols'] = [{ wch: 28 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, catSheet, 'Navigation Categories');
+
+  // Sheet 2: All Child Category Labels (all categories, flattened)
+  const lblRows = [['Category', 'CatID', 'Label Name', 'ID#']];
+  cats.forEach(cat => {
+    const catLabels = labels[cat.catId] || [];
+    catLabels.forEach(lbl => {
+      lblRows.push([cat.name, cat.catId || '', lbl.name, lbl.id || '']);
+    });
+  });
+  const lblSheet = XLSX.utils.aoa_to_sheet(lblRows);
+  lblSheet['!cols'] = [{ wch: 24 }, { wch: 10 }, { wch: 32 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, lblSheet, 'Child Category Labels');
+
+  XLSX.writeFile(wb, 'BH_Navigation_Data.xlsx');
 }
 
 // ═══════════════════════════════════════════════════════════
